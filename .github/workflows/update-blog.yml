@@ -1,4 +1,4 @@
-name: auto update kivinsae.com blog
+name: Publish Blog
 on: [push]
 jobs:
 
