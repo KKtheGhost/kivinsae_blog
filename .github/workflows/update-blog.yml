@@ -3,7 +3,7 @@ on: [push]
 jobs:
 
   build:
-    name: Build
+    name: Publish My Blog
     runs-on: ubuntu-latest
     steps:
     - name: executing remote ssh commands using password
