@@ -3,11 +3,11 @@ As the first daily LeetCode problem in 2022, [burst ballons](https://leetcode.co
 
 We should firstly read the problem description.
 
->You are given `n` balloons, indexed from `0` to `n - 1`. Each balloon is painted with a number on it represented by an array `nums`. You are asked to burst all the balloons.
->
->If you burst the `ith` balloon, you will get `nums[i - 1] * nums[i] * nums[i + 1]` coins. If `i - 1` or `i + 1` goes out of bounds of the array, then treat it as if there is a balloon with a 1 painted on it.
->
->Return the maximum coins you can collect by bursting the balloons wisely.
+> You are given `n` balloons, indexed from `0` to `n - 1`. Each balloon is painted with a number on it represented by an array `nums`. You are asked to burst all the balloons.
+> 
+> If you burst the `ith` balloon, you will get `nums[i - 1] * nums[i] * nums[i + 1]` coins. If `i - 1` or `i + 1` goes out of bounds of the array, then treat it as if there is a balloon with a 1 painted on it.
+> 
+> Return the maximum coins you can collect by bursting the balloons wisely.
 
 Once we saw the word ‘maximum’, it could be a signal for DP solution. Which means there must be a simple DP prototype to solve the problem. But in burst ballons, things get quite complicated than usual. Cause the prototype is quite different from what you have in description and examples.
 
