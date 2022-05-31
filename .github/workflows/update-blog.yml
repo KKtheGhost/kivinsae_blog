@@ -5,6 +5,7 @@ jobs:
   build:
     name: Publish My Blog
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
     steps:
     - name: executing remote ssh commands using password
       uses: appleboy/ssh-action@master
