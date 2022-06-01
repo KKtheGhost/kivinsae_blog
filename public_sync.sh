@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd /opt/hexo && git pull origin master
+cd /opt/hexo && git pull origin master && git lfs fetch --all origin main
 exec >> /var/log/nginx/syntax_check.log 2>&1
 
 echo "============================================"
