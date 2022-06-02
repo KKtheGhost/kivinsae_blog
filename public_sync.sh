@@ -4,7 +4,9 @@
 exec >> /var/log/nginx/syntax_check.log 2>&1
 
 # Pull latest master branch
-cd /opt/hexo && git pull origin master
+cd /opt/hexo
+# Forcily make every the same as the repo.
+git reset --hard && git pull origin master --force
 git lfs fetch --all origin master && git lfs pull
 # Renew config file
 rm _config.yml
