@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Make sure all logs will be record
 exec >> /var/log/nginx/syntax_check.log 2>&1
 
 # Pull latest master branch

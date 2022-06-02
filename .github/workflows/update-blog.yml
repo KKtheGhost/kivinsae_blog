@@ -1,17 +1,31 @@
 name: Publish Blog
-on: [push]
+on: [push, pull_request]
 jobs:
 
   build:
-    name: Publish My Blog
+    name: "Publish My Blog"
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    # needs: test
     steps:
-    - name: executing remote ssh commands using password
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.KIVINSAE_BLOG_HOST }}
-        username: ${{ secrets.KIVINSAE_BLOG_USERNAME }}
-        password: ${{ secrets.KIVINSAE_BLOG_PASSWORD }}
-        port: 22
-        script: /usr/local/bin/public_sync
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$SSH_KEY" > ~/.ssh/kivinsae.key
+          chmod 600 ~/.ssh/kivinsae.key
+          chmod 700 ~/.ssh
+          cat >>~/.ssh/config <<END
+          Host kivinsae-blog
+            HostName $SSH_HOST
+            User $SSH_USER
+            Port 22
+            IdentityFile ~/.ssh/kivinsae.key
+            StrictHostKeyChecking no
+          END
+        env:
+          SSH_USER: ${{ secrets.KIVINSAE_BLOG_USERNAME }}
+          SSH_KEY: ${{ secrets.KIVINSAE_BLOG_RSAKEY }}
+          SSH_HOST: ${{ secrets.KIVINSAE_BLOG_HOST }}
+
+      - name: Executing remote ssh commands to republish blog
+        run: ssh kivinsae-blog '/usr/local/bin/public_sync'
