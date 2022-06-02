@@ -8,12 +8,22 @@ tags:
 - Hexo
 - Plugins
 ---
-## hexo-bilibili-card
+## **hexo-bilibili-card**
 一个Hexo插件，在你的文章中插入b站的视频卡片，样式模仿和借鉴自b站。
-
-[![NPM](https://nodei.co/npm/hexo-bilibili-card.png)](https://nodei.co/npm/hexo-bilibili-card/)
+<p>
+    <img src='https://nodei.co/npm/hexo-bilibili-card.png' align='left' style=' width:300px;height:100 px'/>
+    <br />
+    <br />
+</p>
 
 {% bilicard BV18x411T7ej %}
+
+## **hexo-blog-encrypt**
+<p>
+    <img src='https://nodei.co/npm/hexo-blog-encrypt.png' align='left' style=' width:300px;height:100 px'/>
+    <br />
+    <br />
+</p>
 
 ---
 **End of Test**
