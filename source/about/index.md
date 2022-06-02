@@ -36,3 +36,17 @@ date: 2022-06-02 13:41:23
 [![Insgram Badge](https://img.shields.io/badge/@kivinsae-purple?style=for-the-badge&logo=instagram&logoColor=pink)](https://www.instagram.com/kivinsae/)
 [![Twitter Badge](https://img.shields.io/badge/@kistovincent-white?style=for-the-badge&logo=twitter&logoColor=blue)](https://twitter.com/kistovincent)
 [![Steam Badge](https://img.shields.io/badge/@kivinsae-gray?style=for-the-badge&logo=steam&logoColor=white)](https://steamcommunity.com/id/kivinsae/)
+
+<div class="row">
+  <div class="column">
+    <a herf="https://www.pinterest.com/kivinsae">
+        <img src="https://img.shields.io/badge/@kivinsae-red?style=for-the-badge&logo=pinterest&logoColor=white" alt="Pinterest Badge" style="height:20%" />
+    </a>
+  </div>
+  <div class="column">
+    <img src="https://img.shields.io/badge/@kivinsae-orange?style=for-the-badge&logo=reddit&logoColor=white" alt="Forest" style="height:20%">
+  </div>
+  <div class="column">
+    <img src="https://img.shields.io/badge/@kivinsae-yellow?style=for-the-badge&logo=discord&logoColor=black" alt="Mountains" style="height:20%">
+  </div>
+</div>
