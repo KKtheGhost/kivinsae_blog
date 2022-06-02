@@ -22,7 +22,7 @@ Once we saw the word ‘maximum’, it could be a signal for DP solution. Which 
 So let have a quick view of the example:
 
 **Example 1:**
-```
+```go
 Input: nums = [3,1,5,8]
 Output: 167
 Explanation:
@@ -30,7 +30,7 @@ nums = [3,1,5,8] --> [3,5,8] --> [3,8] --> [8] --> []
 coins =  3*1*5    +   3*5*8   +  1*3*8  + 1*8*1 = 167
 ```
 **Example 2:**
-```
+```go
 Input: nums = [1,5]
 Output: 10
 ```
@@ -58,7 +58,7 @@ dp[i][j] = nums[i] * nums[k] * nums[j] + dp[i][k] + dp[k][j]
 - The head and the end of sub-array is continuously moving, k itselef is also moving, so there should be 3 for loops.
 
 Then we can write down the DP Code structure:
-```
+```go
 func maxCoins(nums []int) int {
     // Add "1" to the head and end of origin array.
     balloms := append([]int{1}, nums...)
@@ -86,7 +86,7 @@ func maxCoins(nums []int) int {
 }
 ```
 Then just add the prototype and maximum function into the DP structure code above to get your first Accepted of 2022~
-```
+```go
 res := balloms[head] * balloms[k] * balloms[end] + dp[head][k] + dp[k][end]
      if res > max {
            max = res
