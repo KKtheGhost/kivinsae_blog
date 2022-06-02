@@ -2,9 +2,6 @@
 title: 关于我 - Kivinsae Fang
 date: 2022-06-02 13:41:23
 ---
-[![wakatime](https://wakatime.com/badge/github/KKtheGhost/KKtheGhost.svg)](https://wakatime.com/badge/github/KKtheGhost/KKtheGhost)
-[![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu)
-
 ## <b>Who Am I</b>
 
 我是Kivinsae，一位住在中国的运维从业者。日常主要在写Go和Python，不过对所有有趣的技术都来者不拒。如果你有什么喜欢的书可以随时推荐给我，也欢迎加我的Steam好友或访问我的博客~
