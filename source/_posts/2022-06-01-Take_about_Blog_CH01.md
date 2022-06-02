@@ -41,9 +41,7 @@ tags:
 而且最后让我彻底抛弃`Medium`的一个导火索，其实是这条通知。这意味这`Medium`的大策略就是封闭了。
 ```
 As of May 2022, Medium no longer supports setting up a custom domain for your profile page or publication.
-
 Custom domains that are already connected will still redirect to your profile page or publication. However, it is no longer possible to connect a custom domain for the first time or to change it. 
-
 You can disconnect your custom domain at any time in your Settings. Please note that once you disconnect your domain, you will not be able to re-connect it.
 ```
 
