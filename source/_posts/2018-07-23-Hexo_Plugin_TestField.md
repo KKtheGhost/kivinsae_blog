@@ -9,7 +9,7 @@ tags:
 - Plugins
 ---
 ## **hexo-bilibili-card**
-![hexo-bilibili-card](https://nodei.co/npm/hexo-bilibili-card.png)
+![](https://nodei.co/npm/hexo-bilibili-card.png)
 
 一个Hexo插件，在你的文章中插入b站的视频卡片，样式模仿和借鉴自b站。
 
@@ -18,7 +18,7 @@ tags:
 </p>
 
 ## **hexo-blog-encrypt**
-![hexo-blog-encrypt](https://nodei.co/npm/hexo-blog-encrypt.png)
+![](https://nodei.co/npm/hexo-blog-encrypt.png)
 
 - 首先, 这是 Hexo 生态圈中 最好的 博客加密插件
 - 你可能需要写一些私密的博客, 通过密码验证的方式让人不能随意浏览.
