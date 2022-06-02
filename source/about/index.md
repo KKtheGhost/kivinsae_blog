@@ -28,25 +28,46 @@ date: 2022-06-02 13:41:23
 - <font color=Red>UNDER PROTECTION BY NDA POLICIES.</font>
 ---
 ## <b>Find Me</b>
-[![Pinterest Badge](https://img.shields.io/badge/@kivinsae-red?style=for-the-badge&logo=pinterest&logoColor=white)](https://www.pinterest.com/kivinsae)
-[![Reddit Badge](https://img.shields.io/badge/@kivinsae-orange?style=for-the-badge&logo=reddit&logoColor=white)](https://www.reddit.com/user/kivinsae)
-[![Discord Badge](https://img.shields.io/badge/@kivinsae-yellow?style=for-the-badge&logo=discord&logoColor=black)](https://discordapp.com/users/kivinsae/)
-[![Telegram Badge](https://img.shields.io/badge/@Kova_Saint_Fin-blue?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Kova_Saint_Fin)
-[![LinkedIn Badge](https://img.shields.io/badge/@kivinsae-navy?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/kivinsae/)
-[![Insgram Badge](https://img.shields.io/badge/@kivinsae-purple?style=for-the-badge&logo=instagram&logoColor=pink)](https://www.instagram.com/kivinsae/)
-[![Twitter Badge](https://img.shields.io/badge/@kistovincent-white?style=for-the-badge&logo=twitter&logoColor=blue)](https://twitter.com/kistovincent)
-[![Steam Badge](https://img.shields.io/badge/@kivinsae-gray?style=for-the-badge&logo=steam&logoColor=white)](https://steamcommunity.com/id/kivinsae/)
 
 <div class="row">
   <div class="column">
-    <a herf="https://www.pinterest.com/kivinsae">
+    <a href="https://www.pinterest.com/kivinsae">
         <img src="https://img.shields.io/badge/@kivinsae-red?style=for-the-badge&logo=pinterest&logoColor=white" alt="Pinterest Badge" style="height:20%" />
     </a>
   </div>
   <div class="column">
-    <img src="https://img.shields.io/badge/@kivinsae-orange?style=for-the-badge&logo=reddit&logoColor=white" alt="Forest" style="height:20%">
+    <a href="https://www.reddit.com/user/kivinsae">
+        <img src="https://img.shields.io/badge/@kivinsae-orange?style=for-the-badge&logo=reddit&logoColor=white" alt="Reddit Badge" style="height:20%" />
+    </a>
   </div>
   <div class="column">
-    <img src="https://img.shields.io/badge/@kivinsae-yellow?style=for-the-badge&logo=discord&logoColor=black" alt="Mountains" style="height:20%">
+    <a href="https://discordapp.com/users/kivinsae/">
+        <img src="https://img.shields.io/badge/@kivinsae-yellow?style=for-the-badge&logo=discord&logoColor=black" alt="Discord Badge" style="height:20%" />
+    </a>
+  </div>
+  <div class="column">
+    <a href="https://t.me/Kova_Saint_Fin">
+        <img src="https://img.shields.io/badge/@Kova_Saint_Fin-blue?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram Badge" style="height:20%" />
+    </a>
+  </div>
+  <div class="column">
+    <a href="https://www.linkedin.com/in/kivinsae/">
+        <img src="https://img.shields.io/badge/@kivinsae-navy?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn Badge" style="height:20%" />
+    </a>
+  </div>
+  <div class="column">
+    <a href="https://www.instagram.com/kivinsae/">
+        <img src="https://img.shields.io/badge/@kivinsae-purple?style=for-the-badge&logo=instagram&logoColor=pink" alt="Insgram Badge" style="height:20%" />
+    </a>
+  </div>
+  <div class="column">
+    <a href="https://twitter.com/kistovincent">
+        <img src="https://img.shields.io/badge/@kistovincent-white?style=for-the-badge&logo=twitter&logoColor=blue" alt="Twitter Badge" style="height:20%" />
+    </a>
+  </div>
+  <div class="column">
+    <a href="https://steamcommunity.com/id/kivinsae/">
+        <img src="https://img.shields.io/badge/@kivinsae-gray?style=for-the-badge&logo=steam&logoColor=white" alt="Steam Badge" style="height:20%" />
+    </a>
   </div>
 </div>
