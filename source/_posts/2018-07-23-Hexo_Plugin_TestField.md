@@ -11,17 +11,11 @@ tags:
 ## **hexo-bilibili-card**
 一个Hexo插件，在你的文章中插入b站的视频卡片，样式模仿和借鉴自b站。
 <img src='https://nodei.co/npm/hexo-bilibili-card.png' align='left' style=' width:300px;height:100 px'/>
-<br />
-<br />
-<br />
 
 {% bilicard BV18x411T7ej %}
 
 ## **hexo-blog-encrypt**
 <img src='https://nodei.co/npm/hexo-blog-encrypt.png' align='left' style=' width:300px;height:100 px'/>
-<br />
-<br />
-<br />
 
 ---
 **End of Test**
