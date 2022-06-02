@@ -18,13 +18,24 @@ date: 2022-06-02 13:41:23
 
 ---
 ## <b>Resume</b>
-#### <b>X.D NetWork/DevOps Engineer</b><div align="right">2018.07 - 2022.05</dov>
+#### <b>[Harbin Institute of Technology](https://www.ea.com/)/Student/Harbin</b><div align="left">2013.09 - 2017.06</dov>
+- Digital Media Technology
+
+#### <b>[ヒューマンアカデミー日本語学校](https://hajl.athuman.com/)/Student/Tokyo</b><div align="left">2017.06 - 2018.07</dov>
+- Japanese
+
+#### <b>[ダイコクドラッグ](https://daikokudrug.com/)/店内スタッフ/Tokyo</b><div align="left">2017.11 - 2018.05</dov>
+- 品切管理
+- 推売システム
+- チラシ配り
+
+#### <b>[X.D NetWork](https://www.xd.com/)/DevOps Engineer/Shanghai</b><div align="left">2018.07 - 2022.05</dov>
 - Work as the DevOps leader in Project `T3 Arena`
 - Build automation tool-chains for the project.
 - Optimized build pipelines (TeamCity) and automate game deployment.
 - Setup and maintain both Chinese and Global production environment.
 
-#### <b>Electronic Arts/Infrastructure Engineer</b><div align="right">2022.05 - Now</dov>
+#### <b>[Electronic Arts](https://www.ea.com/)/Infrastructure Engineer/Shanghai</b><div align="left">2022.05 - Now</dov>
 - <font color=Red>UNDER PROTECTION BY NDA POLICIES.</font>
 ---
 ## <b>Find Me</b>
