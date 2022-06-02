@@ -19,7 +19,7 @@ date: 2022-06-02 13:41:23
 ---
 ## <b>Resume</b>
 #### <b>X.D NetWork/DevOps Engineer</b><div align="right">2018.07 - 2022.05</dov>
-- Work as the DevOps leader in Project 'T3 Arena'
+- Work as the DevOps leader in Project `T3 Arena`
 - Build automation tool-chains for the project.
 - Optimized build pipelines (TeamCity) and automate game deployment.
 - Setup and maintain both Chinese and Global production environment.
@@ -27,22 +27,12 @@ date: 2022-06-02 13:41:23
 #### <b>Electronic Arts/Infrastructure Engineer</b><div align="right">2022.05 - Now</dov>
 - <font color=Red>UNDER PROTECTION BY NDA POLICIES.</font>
 ---
-<div align="left">
-
 ## <b>Find Me</b>
-</div>
-<div align="left">
-<br>
-
 [![Pinterest Badge](https://img.shields.io/badge/@kivinsae-red?style=for-the-badge&logo=pinterest&logoColor=white)](https://www.pinterest.com/kivinsae)
 [![Reddit Badge](https://img.shields.io/badge/@kivinsae-orange?style=for-the-badge&logo=reddit&logoColor=white)](https://www.reddit.com/user/kivinsae)
 [![Discord Badge](https://img.shields.io/badge/@kivinsae-yellow?style=for-the-badge&logo=discord&logoColor=black)](https://discordapp.com/users/kivinsae/)
 [![Telegram Badge](https://img.shields.io/badge/@Kova_Saint_Fin-blue?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/Kova_Saint_Fin)
-
 [![LinkedIn Badge](https://img.shields.io/badge/@kivinsae-navy?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/kivinsae/)
 [![Insgram Badge](https://img.shields.io/badge/@kivinsae-purple?style=for-the-badge&logo=instagram&logoColor=pink)](https://www.instagram.com/kivinsae/)
 [![Twitter Badge](https://img.shields.io/badge/@kistovincent-white?style=for-the-badge&logo=twitter&logoColor=blue)](https://twitter.com/kistovincent)
 [![Steam Badge](https://img.shields.io/badge/@kivinsae-gray?style=for-the-badge&logo=steam&logoColor=white)](https://steamcommunity.com/id/kivinsae/)
-
-</br>
-</div>
