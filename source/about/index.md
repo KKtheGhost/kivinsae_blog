@@ -47,7 +47,7 @@ date: 2022-06-02 13:41:23
   </div>
   <div class="column">
     <a href="https://t.me/Kova_Saint_Fin">
-        <img src="https://img.shields.io/badge/@Kova_Saint_Fin-blue?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram Badge" style="height:20%" />
+        <img src="https://img.shields.io/badge/@kivinsae-blue?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram Badge" style="height:20%" />
     </a>
   </div>
   <div class="column">
@@ -62,7 +62,7 @@ date: 2022-06-02 13:41:23
   </div>
   <div class="column">
     <a href="https://twitter.com/kistovincent">
-        <img src="https://img.shields.io/badge/@kistovincent-white?style=for-the-badge&logo=twitter&logoColor=blue" alt="Twitter Badge" style="height:20%" />
+        <img src="https://img.shields.io/badge/@kivinsae-white?style=for-the-badge&logo=twitter&logoColor=blue" alt="Twitter Badge" style="height:20%" />
     </a>
   </div>
   <div class="column">
