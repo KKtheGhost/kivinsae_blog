@@ -8,3 +8,4 @@ public/
 .deploy*/
 _multiconfig.yml
 _config.yml
+node_modules/hexo-theme-landscape/_config.yml

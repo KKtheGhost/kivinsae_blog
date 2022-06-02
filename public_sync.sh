@@ -10,12 +10,21 @@ git reset --hard && git pull origin master --force
 git lfs fetch --all origin master && git lfs pull
 # Renew config file
 rm _config.yml
+rm node_modules/hexo-theme-landscape/_config.yml
+# Get Tokens
 ENCRYPT_PSWD=$(cat /root/.hexo_encrypt | grep ENCRYPT | awk -F':' '{print $2}')
 PRIVATE_PSWD=$(cat /root/.hexo_encrypt | grep PRIVATE | awk -F':' '{print $2}')
+LC_APPID=$(cat /root/.hexo_encrypt | grep LCAPPID | awk -F':' '{print $2}')
+LC_APPKEY=$(cat /root/.hexo_encrypt | grep LCAPPKEY | awk -F':' '{print $2}')
 # Replace the encrypt code in config
 cp -rf _config.module.yml _config.yml
 sed -i "s/TAG_ENCRYPT_PSWD/$ENCRYPT_PSWD/g" _config.yml
 sed -i "s/TAG_PRIVATE_PSWD/$PRIVATE_PSWD/g" _config.yml
+
+# Replace the LeanCloud Key in config
+cp -rf node_modules/hexo-theme-landscape/_config.module.yml _config.yml
+sed -i "s/LEANCLOUD_APPID/$LC_APPID/g" node_modules/hexo-theme-landscape/_config.yml
+sed -i "s/LEANCLOUD_APPKEY/$LC_APPKEY/g" node_modules/hexo-theme-landscape/_config.yml
 
 echo "============================================"
 echo $(date +"%F %T")
