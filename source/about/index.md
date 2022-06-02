@@ -12,7 +12,7 @@ date: 2022-06-02 13:41:23
 <table width="800px">
 <tr valign="top" width="100%">
 
-#### 📈 <a href="https://kivinsae.com" target="_blank">**My GitHub Status**</a>
+#### 📈 <a href="https://github.com/KKtheGhost" target="_blank">**My GitHub Status**</a>
 
 [![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=KKtheGhost&theme=dark&show_icons=true)](https://github.com/anuraghazra/github-readme-stats)
 
