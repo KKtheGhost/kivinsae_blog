@@ -25,5 +25,11 @@ tags:
 - 这在 wordpress, emlog 或是其他博客系统中都很容易实现, 然而 hexo 除外.
 - 可以在这里看到[测试页面](https://kivinsae.com/2018/07/23/2018-07-23-Hexo_encrypt_test)
 
+## **hexo-ruby-character**
+![](https://nodei.co/npm/hexo-ruby-character.png)
+
+- `{% ruby 佐天泪子|掀裙狂魔 %}` → {% ruby 佐天泪子|掀裙狂魔 %}
+- `{% ruby 超電磁砲|レールガン %}` → {% ruby 超電磁砲|レールガン %}
+
 ---
 **End of Test**
