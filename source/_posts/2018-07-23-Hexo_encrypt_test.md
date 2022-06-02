@@ -8,4 +8,4 @@ tags:
 - Plugins
 - ENCRYPT
 ---
-![image info](../css/images/98721335.png)
+![image info](https://kivinsae-blog.oss-ap-northeast-1.aliyuncs.com/blog_images/98721335.png)
