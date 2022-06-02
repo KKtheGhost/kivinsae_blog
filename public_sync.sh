@@ -14,8 +14,8 @@ ENCRYPT_PSWD=$(cat /root/.hexo_encrypt | grep ENCRYPT | awk -F':' '{print $2}')
 PRIVATE_PSWD=$(cat /root/.hexo_encrypt | grep PRIVATE | awk -F':' '{print $2}')
 # Replace the encrypt code in config
 cp -rf _config.module.yml _config.yml
-sed -i "s/TAG_ENCRYPT_PSWD/$ENCRYPT_PSWD/g" _config.module.yml
-sed -i "s/TAG_PRIVATE_PSWD/$PRIVATE_PSWD/g" _config.module.yml
+sed -i "s/TAG_ENCRYPT_PSWD/$ENCRYPT_PSWD/g" _config.yml
+sed -i "s/TAG_PRIVATE_PSWD/$PRIVATE_PSWD/g" _config.yml
 
 echo "============================================"
 echo $(date +"%F %T")
