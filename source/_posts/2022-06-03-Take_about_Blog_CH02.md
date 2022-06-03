@@ -50,7 +50,7 @@ tags:
 - 可以通过`GitHub Action || GitLab CICD`进行自动化发布
 - 最好页面资源是纯静态资源，这样可以在使用对象存储来作为页面的发布源。
 
-很巧的是这两个需求`Hexo`也满足了，而我现在也正舒服的在`VS Code`的界面里书写这篇文章，而写完后也将通过`./COMMIT_MASTER.sh`进行一键`rebase`和`push`，而后续的所有**同步、测试、静态资源生成、发布**的事情，完全由GitHub和脚本来帮我
+很巧的是这两个需求`Hexo`也满足了，而我现在也正舒服的在`VS Code`的界面里书写这篇文章，而写完后也将通过`./COMMIT_MASTER.sh`进行一键`rebase`和`push`，而后续的所有**同步、测试、静态资源生成、发布**的事情，完全由GitHub和脚本来帮我。而我对博客所做的一切变更，都会诚实而没有遗漏地记录在我的[Github](https://github.com/KKtheGhost/kivinsae_blog/actions)中，这一切正是我想要的。
 
 ![此时此刻我的工作界面](https://kivinsae-blog.oss-ap-northeast-1.aliyuncs.com/blog_images/2022-06-03-Take_about_Blog_CH02.png)
 
