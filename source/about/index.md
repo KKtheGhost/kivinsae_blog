@@ -11,7 +11,8 @@ date: 2022-06-02 13:41:23
 
 #### 📈 <a href="https://github.com/KKtheGhost" target="_blank">**My GitHub Status**</a>
 
-[![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=KKtheGhost&theme=dark&show_icons=true)](https://github.com/anuraghazra/github-readme-stats)
+[![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=KKtheGhost&theme=light&show_icons=true)](https://github.com/anuraghazra/github-readme-stats)
+[![willianrod's wakatime stats](https://github-readme-stats.vercel.app/api/wakatime?username=Kivinsae&layout=compact&theme=light)](https://github.com/anuraghazra/github-readme-stats)
 
 </tr>
 </table>
