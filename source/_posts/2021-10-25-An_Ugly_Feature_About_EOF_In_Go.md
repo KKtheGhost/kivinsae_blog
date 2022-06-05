@@ -46,7 +46,7 @@ func  init() {
 The answer is `YES`. An obvious improvement is to define io.EOF as a constant. But because EOF corresponds to an error interface type, and the current constant syntax of the Go does not support interfaces that defined in constant types. But we can bypass this restriction through some tricks . Constants in Go have a main types of bool/int/float/string/nil. Constants do not only exclude complex types such as interfaces, and even constant arrays or structures are not supported! However, constants have an important extension rule: New types defined based on bool/int/float/string/nil also support constants. The codeblock shown below is a simple case of that kind of tricks.
 ```go
 type  MyString  string
-const  name MyString =  "chai2010"
+const  name MyString =  "Kivinsae"
 ```
 Following this case, we can rewrite the errorString function of `package io` and make `io.EOF` an essential const hidden in the surface of normal interface:
 ```go
