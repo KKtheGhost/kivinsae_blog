@@ -32,7 +32,9 @@ tags:
 - `{% ruby 超電磁砲|レールガン %}` → {% ruby 超電磁砲|レールガン %}
 
 ## **YouTube iframe showcase test**
-<iframe width="560" height="315" src="https://www.youtube.com/embed/0KSOMA3QBU0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<div class="article-youtube-container">
+<iframe src="https://www.youtube.com/embed/0KSOMA3QBU0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="article-youtube-video"></iframe>
+</div>
 
 ---
 **End of Test**
