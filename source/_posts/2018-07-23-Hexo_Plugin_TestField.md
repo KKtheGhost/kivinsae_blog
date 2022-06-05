@@ -12,10 +12,15 @@ tags:
 ![](https://nodei.co/npm/hexo-bilibili-card.png)
 
 一个Hexo插件，在你的文章中插入b站的视频卡片，样式模仿和借鉴自b站。
-
+- **Type 1**
 <p>
 {% bilicard BV18x411T7ej %}
 </p>
+
+- **Type 2**
+<div class="article-youtube-container">
+    <iframe src="//player.bilibili.com/player.html?aid=1185693&bvid=BV18x411T7ej&cid=1755514&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+</div>
 
 ## **hexo-blog-encrypt**
 ![](https://nodei.co/npm/hexo-blog-encrypt.png)
