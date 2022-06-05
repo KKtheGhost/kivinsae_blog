@@ -19,7 +19,7 @@ tags:
 
 - **Type 2**
 <div style="position: relative; width: 100%; height: 0; padding-bottom: 75%;">
-    <iframe src="//player.bilibili.com/player.html?aid=597067931&bvid=BV16B4y1X7ap&cid=734651916&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" style="position: absolute; width: 100%; height: 100%; left: 0; top: 0;"></iframe>
+    <iframe width="560" height="315" src="//player.bilibili.com/player.html?aid=597067931&bvid=BV16B4y1X7ap&cid=734651916&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"></iframe>
 </div>
 
 ## **hexo-blog-encrypt**
@@ -37,7 +37,9 @@ tags:
 - `{% ruby 超電磁砲|レールガン %}` → {% ruby 超電磁砲|レールガン %}
 
 ## **YouTube iframe showcase test**
-<iframe width="100%" height="100%" src="https://www.youtube.com/embed/F57P9C4SAW4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<div style="position: relative; width: 100%; height: 0; padding-bottom: 75%;">
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/QGJuMBdaqIw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div>
 
 ---
 **End of Test**
