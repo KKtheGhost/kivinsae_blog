@@ -19,7 +19,7 @@ tags:
 
 - **Type 2**
 <div class="article-youtube-container">
-    <iframe width="560" height="315" src="//player.bilibili.com/player.html?aid=638458422&bvid=BV1hY4y1Y7g7&cid=584468133&page=1"frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen> </iframe>
+    <iframe src="//player.bilibili.com/player.html?aid=60016166&cid=104514776&page=1&danmaku=0" allowfullscreen="allowfullscreen" width="560" height="315" scrolling="no" frameborder="0" sandbox="allow-top-navigation allow-same-origin allow-forms allow-scripts"></iframe>
 </div>
 
 ## **hexo-blog-encrypt**
