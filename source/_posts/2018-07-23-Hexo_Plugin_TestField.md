@@ -19,11 +19,13 @@ tags:
 
 - **Type 2**
 <details>
-    <summary>【鬼谷说】菊石（其一）：旧神的涅槃</summary>
+    <summary><b>【鬼谷说】菊石（其一）：旧神的涅槃</b></summary>
     <div style="position: relative; padding-bottom: 75%; height: 0;">
         <iframe width="600" height="450" src="https://player.bilibili.com/player.html?aid=597067931&bvid=BV16B4y1X7ap&cid=734651916&page=1&high_quality=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
     </div>
+    <br>
 </details>
+<br>
 
 ## **hexo-blog-encrypt**
 ![](https://nodei.co/npm/hexo-blog-encrypt.png)
@@ -41,28 +43,13 @@ tags:
 
 ## **YouTube iframe showcase test**
 <details>
-	<summary>
-		<span class="summary-title">Katy Perry - Firework (Official Music Video)</span>
-		<div class="summary-chevron-up">
-			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg>
-		</div>
-	</summary>
-    <div class="summary-content"> 
-        <div style="position: relative; padding-bottom: 56.25%; height: 0;">
-            <iframe width="560" height="315" src="https://www.youtube.com/embed/QGJuMBdaqIw" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
-        </div>
-    </div>
-	<div class="summary-chevron-down">
-		<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-up"><polyline points="18 15 12 9 6 15"></polyline></svg>
-		
-</details>
-
-<details>
-    <summary>Katy Perry - Firework (Official Music Video)</summary>
+    <summary><b>Katy Perry - Firework (Official Music Video)</b></summary>
     <div style="position: relative; padding-bottom: 56.25%; height: 0;">
         <iframe width="560" height="315" src="https://www.youtube.com/embed/QGJuMBdaqIw" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
     </div>
+    <br>
 </details>
+<br>
 
 ---
 **End of Test**
