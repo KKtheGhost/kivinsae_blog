@@ -14,12 +14,12 @@ tags:
 一个Hexo插件，在你的文章中插入b站的视频卡片，样式模仿和借鉴自b站。
 - **Type 1**
 <p>
-{% bilicard BV18x411T7ej %}
+{% bilicard BV1hY4y1Y7g7 %}
 </p>
 
 - **Type 2**
 <div class="article-youtube-container">
-    <iframe width="560" height="315" src="//player.bilibili.com/player.html?aid=1185693&bvid=BV18x411T7ej&cid=1755514&page=1"frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen> </iframe>
+    <iframe width="560" height="315" src="//player.bilibili.com/player.html?aid=638458422&bvid=BV1hY4y1Y7g7&cid=584468133&page=1"frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen> </iframe>
 </div>
 
 ## **hexo-blog-encrypt**
