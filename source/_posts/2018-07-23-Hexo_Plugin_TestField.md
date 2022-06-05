@@ -41,6 +41,23 @@ tags:
 
 ## **YouTube iframe showcase test**
 <details>
+	<summary>
+		<span class="summary-title">Katy Perry - Firework (Official Music Video)</span>
+		<div class="summary-chevron-up">
+			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg>
+		</div>
+	</summary>
+    <div class="summary-content"> 
+        <div style="position: relative; padding-bottom: 56.25%; height: 0;">
+            <iframe width="560" height="315" src="https://www.youtube.com/embed/QGJuMBdaqIw" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
+        </div>
+    </div>
+	<div class="summary-chevron-down">
+		<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-up"><polyline points="18 15 12 9 6 15"></polyline></svg>
+		
+</details>
+
+<details>
     <summary>Katy Perry - Firework (Official Music Video)</summary>
     <div style="position: relative; padding-bottom: 56.25%; height: 0;">
         <iframe width="560" height="315" src="https://www.youtube.com/embed/QGJuMBdaqIw" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
