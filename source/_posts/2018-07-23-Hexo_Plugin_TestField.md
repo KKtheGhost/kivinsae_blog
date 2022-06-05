@@ -33,7 +33,7 @@ tags:
 
 ## **YouTube iframe showcase test**
 <div class="article-youtube-container">
-<iframe src="https://www.youtube.com/embed/0KSOMA3QBU0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="article-youtube-video"></iframe>
+<iframe src="https://www.youtube.com/embed/0KSOMA3QBU0" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="article-youtube-video"></iframe>
 </div>
 
 ---
