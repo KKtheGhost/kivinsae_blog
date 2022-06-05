@@ -18,7 +18,7 @@ tags:
 </p>
 
 - **Type 2**
-<details>
+<details style="box-shadow: 2px 2px 5px; border-radius: 6px;">
     <summary><b>【鬼谷说】菊石（其一）：旧神的涅槃</b></summary>
     <div style="position: relative; padding-bottom: 75%; height: 0;">
         <iframe width="600" height="450" src="https://player.bilibili.com/player.html?aid=597067931&bvid=BV16B4y1X7ap&cid=734651916&page=1&high_quality=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
@@ -42,7 +42,7 @@ tags:
 - `{% ruby 超電磁砲|レールガン %}` → {% ruby 超電磁砲|レールガン %}
 
 ## **YouTube iframe showcase test**
-<details>
+<details style="box-shadow: 2px 2px 5px; border-radius: 6px;">
     <summary><b>Katy Perry - Firework (Official Music Video)</b></summary>
     <div style="position: relative; padding-bottom: 56.25%; height: 0;">
         <iframe width="560" height="315" src="https://www.youtube.com/embed/QGJuMBdaqIw" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
