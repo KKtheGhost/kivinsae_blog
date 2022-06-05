@@ -18,8 +18,8 @@ tags:
 </p>
 
 - **Type 2**
-<div style="position: relative; width: 100%; height: 0; padding-bottom: 75%;">
-    <iframe width="560" height="315" src="//player.bilibili.com/player.html?aid=597067931&bvid=BV16B4y1X7ap&cid=734651916&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"></iframe>
+<div style="position: relative; padding-bottom: 75%; height: 0;">
+    <iframe width="600" height="450" src="//player.bilibili.com/player.html?aid=597067931&bvid=BV16B4y1X7ap&cid=734651916&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
 </div>
 
 ## **hexo-blog-encrypt**
@@ -41,5 +41,8 @@ tags:
     <iframe width="560" height="315" src="https://www.youtube.com/embed/QGJuMBdaqIw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 </div>
 
+<div style="position: relative; padding-bottom: 56.25%; height: 0;">
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/QGJuMBdaqIw" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
+</div>
 ---
 **End of Test**
