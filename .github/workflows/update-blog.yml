@@ -27,5 +27,8 @@ jobs:
           SSH_KEY: ${{ secrets.KIVINSAE_BLOG_RSAKEY }}
           SSH_HOST: ${{ secrets.KIVINSAE_BLOG_HOST }}
 
+      - name: Make the public_sync script could be executed.
+        run: ssh kivinsae-blog 'chmod +x /opt/hexo/public_sync.sh'
+
       - name: Executing remote ssh commands to republish blog
         run: ssh kivinsae-blog '/usr/local/bin/public_sync'
