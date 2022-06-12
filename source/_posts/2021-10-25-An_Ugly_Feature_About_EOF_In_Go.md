@@ -7,6 +7,8 @@ tags:
 - Go Library
 - Go
 ---
+`io.EOF` seems to be a weird feature in Go. This article will explain **WHY**.
+
 ### <b>ch1. What is io.EOF</b>
 `io.EOF` is a basic statement used by Go programming in a high frequency. We can find out it's definition and documents easily by reading the source code and using `go doc`. Here's the code:
 ```go

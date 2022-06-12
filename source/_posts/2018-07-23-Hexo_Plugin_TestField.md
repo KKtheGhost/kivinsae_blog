@@ -8,6 +8,8 @@ tags:
 - Hexo
 - Plugins
 ---
+本文主要对站点内额外安装的一些页面效果类和`widget`类插件进行测试和呈现效果验证使用。
+
 ## **hexo-bilibili-card**
 ![](https://nodei.co/npm/hexo-bilibili-card.png)
 
