@@ -160,7 +160,7 @@ jobs:
 ossutil64 sync /var/www/hexo/public/ oss://<bucket_name>/ --delete --force
 ```
 利用阿里云提供的ossutil64工具，我们可以非常方便把本地静态页面目录的所有内容同步到OSS上，并立刻生效。至此，我的博客的全部部署问题已经全部解决。下面是一张架构图，有助于读者更好理解这个架构的拓扑结构：
-
+![Server structure](https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/2022-06-14-Talk_about_Blog_CH03_01.drawio-fs8.png)
 
 ## **插件的选择和优化**
 
