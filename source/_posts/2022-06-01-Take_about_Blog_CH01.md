@@ -1,7 +1,7 @@
 ---
 title: 聊聊个人博客这件事（一）
 date: 2022-06-01 15:22:00
-catagories:
+categories:
 - 博客搭建和优化
 tags:
 - CHN
