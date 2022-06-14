@@ -6,13 +6,14 @@ tags:
 - 技术
 - 博客
 ---
-好了，终于来到了聊聊个人博客系列的**完结篇**。本篇我会尽可能简单明了的聊一下我的个人博客所使用的博客框架的具体部署细节、所使用的主题、所进行的调优。如果能够在读者未来想到搭建自己的博客的时候，能够起到一丁半点的帮助，那便是不虚这些笔墨了。
+<font color=Green><b>长文预警</b></font> 好了，终于来到了聊聊个人博客系列的**完结篇**。本篇我会尽可能简单明了的聊一下我的个人博客所使用的博客框架的具体部署细节、所使用的主题、所进行的调优。如果能够在读者未来想到搭建自己的博客的时候，能够起到一丁半点的帮助，那便是不虚这些笔墨了。
 
 我大体会从以下几块内容进行展开，同时这些内容也应当是一个从框架到细节的过程。当然由于篇幅所限制，会有一些内容可能无法被详细描述，我会在未来考虑针对某一些技术细节，单独写个Post来说清楚：
 - 一、搭建和部署
   - 安装、部署和生成
   - HTTPS和CertBot
   - GitHub Action和自动化
+  - 防火墙问题
 - 二、插件的选择和优化
 - 三、CSS样式调整和EJS修改
 
@@ -41,6 +42,7 @@ cp -r $HEXO_HOME/public/* /var/www/hexo/public/
 拥有了自己的博客以后，我们还是需要稍微为自己的博客的安全性负责的。这里并不是说这个博客有什么流量吸引歹人来攻击，而是关闭`HTTP 80端口`访问、强制`HTTPS 443`访问、使用全球授信的证书链作为`SSL证书`，是任何一个网站搭建过程中**最最最根本的基本常识**。是的，这里在**明示**我国大量政企事业单位的IT从业者（或部门的领导）是缺乏基本常识的（乐）。
 
 相对于企业级昂贵的`SSL证书`，其实个人对于证书的选择面非常自由且廉价。在完成页面的部署之后，假如你使用的是`Apache2`、`Nginx`这种主流的负载均衡，那么完全可以用`CertBot`来进行一键自动HTTPS证书签发和部署，非常非常方便。此处以`Nginx`为例：
+
 ```bash
 # Install essential packages.
 $~ sudo apt install certbot python3-certbot-nginx
@@ -94,6 +96,69 @@ $~ sudo certbot renew --dry-run
 2. 在完成任意文档、草稿、`CSS`和`EJS`调整之后，只需要一个简单的命令，就可以在远程的服务器和对象存储中，生成、发布并更新博客内容。
 
 由于目前这个博客的代码托管在了`GitHub`上，所以最简单的方法就是直接使用`GitHub Action`来作为自动化的方案。事实上现代的代码托管平台，例如`GitHub`、`GitLab`、乃至于`Azure`这样的云服务，对`CICD Pipeline`的支持都已经非常出色了，任何有稍许计算机知识的人都可以快速搭建自己的`CICD`工作流。
+
+那么言归正传，在这个博客搭建的一开始，我就写好了对应的`GitHub Action`，当时写的时候主要是两个原则：
+- 不引入第三方的容器镜像，原因是我不想再审一遍别人的`dockerfile`，而且引入镜像会让`Action`很慢。
+- 尽量少的`Step`，这样无论是`debug`还是执行都会很简单。
+
+所以以下便是本博客在使用的`GitHub Action Workflow`：
+```yml
+name: Publish Blog
+on: [push, pull_request]
+jobs:
+
+  build:
+    name: "Publish My Blog"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    # needs: test
+    steps:
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$SSH_KEY" > ~/.ssh/kivinsae.key
+          chmod 600 ~/.ssh/kivinsae.key
+          chmod 700 ~/.ssh
+          cat >>~/.ssh/config <<END
+          Host kivinsae-blog
+            HostName $SSH_HOST
+            User $SSH_USER
+            Port 22
+            IdentityFile ~/.ssh/kivinsae.key
+            StrictHostKeyChecking no
+          END
+        env:
+          SSH_USER: ${{ secrets.KIVINSAE_BLOG_USERNAME }}
+          SSH_KEY: ${{ secrets.KIVINSAE_BLOG_RSAKEY }}
+          SSH_HOST: ${{ secrets.KIVINSAE_BLOG_HOST }}
+
+      - name: Make the public_sync script could be executed.
+        run: ssh kivinsae-blog 'chmod +x /opt/hexo/public_sync.sh'
+
+      - name: Executing remote ssh commands to republish blog
+        run: ssh kivinsae-blog '/usr/local/bin/public_sync'
+```
+实质上，这个工作流一共只有一个`step`，三个任务。分别是：
+- 初始化容器，配置容器的`ssh rsa私钥`和`.ssh`目录权限，配置目标服务器信息。
+- 确保远程服务器上的更新脚本拥有可执行权限。
+- 远程执行服务器上的自动更新、清理、`Hexo`生成脚本。
+同时，工作流文件声明了只有在`push`到主分支，或者`PR`到主分支的前提下，才会触发运行。
+
+通过这样的工作流，我只要在本地`IDE`进行文档的书写和编辑，然后通过`COMMIT_MASTER`脚本进行主分支推送就可以了。然后在10-20秒后，我的博客就会无感地更新所有新编辑的内容，而且我可以确保所有的变更，都是通过版本管理进行跟踪的。永远不需要担心任何一个修改发生在了自己想不起来的地方。
+
+### **防火墙问题**
+由于**一些众所周知的问题**，绝大多数脑回路正常的工程师都不会把自己博客服务器的本体放在中国大陆。但是大量的海外机房由于**另一个众所周知的原因**，国内直接访问是会有很大的问题的。所以这个月我花了一些时间来处理从中国大陆访问这个博客的问题。
+
+这个时候，Hexo的静态页面的好处就体现出来了。我并不希望多花不必要的服务器费用在国内重新搭建一个镜像服务，同时我也希望国内的访问能够同样稳定快速。那么这个时候，非大陆的阿里云`OSS`的静态网站托管似乎成了一个最佳的选择，因为阿里云的海外节点只要你不作死是基本不会被墙的，所以算是一个非常好的选择。
+
+既然说到阿里云OSS静态网站托管，具体的部署方式可以参阅[这篇文章](https://help.aliyun.com/document_detail/31872.html)。其本质上就是阿里在`OSS`的基础上为用户额外提供了一层负载均衡代理，同时用户还可以白嫖阿里云OSS加速节点的全球加速效果（严格来说是要钱的，但是考虑个人站点的一丝丝流量，**约等于不要钱**）
+
+而我这边其实只需要在自动生成脚本的最后面增加一行命令，就可以完成这个节点的同步：
+```bash
+ossutil64 sync /var/www/hexo/public/ oss://<bucket_name>/ --delete --force
+```
+利用阿里云提供的ossutil64工具，我们可以非常方便把本地静态页面目录的所有内容同步到OSS上，并立刻生效。至此，我的博客的全部部署问题已经全部解决。下面是一张架构图，有助于读者更好理解这个架构的拓扑结构：
+
 
 ## **插件的选择和优化**
 
