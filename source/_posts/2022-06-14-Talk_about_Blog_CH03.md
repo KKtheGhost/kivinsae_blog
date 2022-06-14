@@ -12,15 +12,15 @@ tags:
 <font color=Green><b>长文预警</b></font> 好了，终于来到了聊聊个人博客系列的**完结篇**。本篇我会尽可能简单明了的聊一下我的个人博客所使用的博客框架的具体部署细节、所使用的主题、所进行的调优。如果能够在读者未来想到搭建自己的博客的时候，能够起到一丁半点的帮助，那便是不虚这些笔墨了。
 
 我大体会从以下几块内容进行展开，同时这些内容也应当是一个从框架到细节的过程。当然由于篇幅所限制，会有一些内容可能无法被详细描述，我会在未来考虑针对某一些技术细节，单独写个Post来说清楚：
-- 一、搭建和部署
-  - 安装、部署和生成
-  - HTTPS和CertBot
-  - GitHub Action和自动化
-  - 防火墙问题
-- 二、插件的选择和优化
-- 三、CSS样式调整和EJS修改
-  - 折叠块的渲染
-  - Tags和Categories页面支持
+- [一、搭建和部署](https://kivinsae.com/2022/06/15/2022-06-14-Talk_about_Blog_CH03/#%E4%B8%80%E3%80%81%E6%90%AD%E5%BB%BA%E5%92%8C%E9%83%A8%E7%BD%B2)
+  - [安装、部署和生成](https://kivinsae.com/2022/06/15/2022-06-14-Talk_about_Blog_CH03/#%E5%AE%89%E8%A3%85%E3%80%81%E9%83%A8%E7%BD%B2%E5%92%8C%E7%94%9F%E6%88%90)
+  - [HTTPS和CertBot](https://kivinsae.com/2022/06/15/2022-06-14-Talk_about_Blog_CH03/#HTTPS%E5%92%8CCertBot)
+  - [GitHub Action和自动化](https://kivinsae.com/2022/06/15/2022-06-14-Talk_about_Blog_CH03/#GitHub-Action%E5%92%8C%E8%87%AA%E5%8A%A8%E5%8C%96)
+  - [防火墙问题](https://kivinsae.com/2022/06/15/2022-06-14-Talk_about_Blog_CH03/#%E9%98%B2%E7%81%AB%E5%A2%99%E9%97%AE%E9%A2%98)
+- [二、插件的选择和优化](https://kivinsae.com/2022/06/15/2022-06-14-Talk_about_Blog_CH03/#%E6%8F%92%E4%BB%B6%E7%9A%84%E9%80%89%E6%8B%A9%E5%92%8C%E4%BC%98%E5%8C%96)
+- [三、CSS样式调整和EJS修改](https://kivinsae.com/2022/06/15/2022-06-14-Talk_about_Blog_CH03/#CSS%E6%A0%B7%E5%BC%8F%E8%B0%83%E6%95%B4%E5%92%8CEJS%E4%BF%AE%E6%94%B9)
+  - [折叠块的渲染](https://kivinsae.com/2022/06/15/2022-06-14-Talk_about_Blog_CH03/#%E6%8A%98%E5%8F%A0%E5%9D%97%E7%9A%84%E6%B8%B2%E6%9F%93)
+  - [Tags和Categories页面支持](https://kivinsae.com/2022/06/15/2022-06-14-Talk_about_Blog_CH03/#Tags%E5%92%8CCategories%E9%A1%B5%E9%9D%A2%E6%94%AF%E6%8C%81)
 
 ## **一、搭建和部署**
 
@@ -289,6 +289,6 @@ comments: false
 
 
 ---
-#### **以上就是关于本博客建设的简要技术说明，未来如果有时间我会更新一些关于博客建设的细节和Hexo本身调优的心得。** 
+**以上就是关于本博客建设的简要技术说明，未来如果有时间我会更新一些关于博客建设的细节和Hexo本身调优的心得。** 
 
 *感谢阅读*
