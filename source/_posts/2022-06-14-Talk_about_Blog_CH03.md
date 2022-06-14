@@ -223,7 +223,7 @@ valine:
 
 那么，为了让博客在`landscape`主题中可以正常显示`Tags`和`Categories`页面，我在`layout`目录下需要额外创建两个`ejs`模板文件，用于让这两个页面可以正常渲染和呈现，代码如下：
 
-```html
+```js
 <!-- node_module/hexo-theme-landscape/layout/tags.ejs -->
 <article id="post" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-inner">
@@ -240,7 +240,8 @@ valine:
   </div>
 </article>
 ```
-```html
+
+```js
 <!-- node_module/hexo-theme-landscape/layout/categories.ejs -->
 <article class="article article-type-post show">
   <div class="article-inner">
@@ -274,6 +275,7 @@ layout: tags
 comments: false
 ---
 ```
+
 ```
 # source/categories/index.md
 ---
