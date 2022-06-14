@@ -20,7 +20,7 @@ tags:
     - 掰扯掰扯这些年流连于各种博客和知识库的感受。
 - **[聊聊个人博客这件事（二）](https://kivinsae.com/2022/06/03/2022-06-03-Take_about_Blog_CH02)**
     - 关于几大Blog Framework: `WordPress`, `Typecho`, `Hexo`的使用差异以及如何选择。
-- **聊聊个人博客这件事（三）**
+- **[聊聊个人博客这件事（三）](https://cnblog.kivinsae.com/2022/06/15/2022-06-14-Talk_about_Blog_CH03/)**
     - 纯粹的关于这个博客的搭建，以及如何在本地的`VSCode`中一键完成远在东京的服务器的所有发布和修改。
     - 这里大约是需要谈谈`ssl`和`domain`购买的问题的。
 ---

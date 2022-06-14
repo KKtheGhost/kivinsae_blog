@@ -1,5 +1,6 @@
 ---
 title: 聊聊个人博客这件事（三）
+date: 2022-06-15 02:30:22
 categories:
 - 博客搭建和优化
 tags:
@@ -18,6 +19,8 @@ tags:
   - 防火墙问题
 - 二、插件的选择和优化
 - 三、CSS样式调整和EJS修改
+  - 折叠块的渲染
+  - Tags和Categories页面支持
 
 ## **一、搭建和部署**
 
@@ -160,11 +163,127 @@ jobs:
 ossutil64 sync /var/www/hexo/public/ oss://<bucket_name>/ --delete --force
 ```
 利用阿里云提供的ossutil64工具，我们可以非常方便把本地静态页面目录的所有内容同步到OSS上，并立刻生效。至此，我的博客的全部部署问题已经全部解决。下面是一张架构图，有助于读者更好理解这个架构的拓扑结构：
-![Server structure](https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/2022-06-14-Talk_about_Blog_CH03_01.drawio-fs8.png)
+
+<img src="https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/2022-06-14-Talk_about_Blog_CH03_01.drawio-fs8.png" width="480">
 
 ## **插件的选择和优化**
+Hexo拥有一批相当数量的插件开发者，因此对于Hexo的插件选择，其实是比较丰富。不过我个人还是遵循了就简原则，尽可能使用了最少的插件，以下为目前的插件列表：
+```json
+"hexo-bilibili-card": "^0.6.0",
+"hexo-blog-encrypt": "^3.1.6",
+"hexo-renderer-ejs": "^2.0.0",
+"hexo-renderer-markdown-it": "^6.0.1",
+"hexo-ruby-character": "^1.0.6",
+"hexo-theme-landscape": "^0.0.3",
+"nodejieba": "^2.6.0",
+"valine": "^1.4.18"
+```
+
+其中`hexo-bilibili-card`、`hexo-blog-encrypt`、`hexo-ruby-character`的效果可以在[Hexo Blog plugins test field](https://cnblog.kivinsae.com/2018/07/23/2018-07-23-Hexo_Plugin_TestField/)中查看，分别用于页面内容的丰富化呈现。
+
+`hexo-renderer-ejs`为Hexo默认主题`landscape`自带的ejs解析插件。`hexo-renderer-markdown-it`为MarkDown解析加强插件。`hexo-theme-landscape`为Hexo默认主题本身。`nodejieba`为中文分词函数库。
+
+需要着重讲一下是评论插件`valine`，具体的插件介绍和安装指南可以参考 **[Valine官网](https://valine.js.org/)** 。随着韩国几款主流的论坛评论插件例如`livere`之流对网络的要求愈发变态，而`Gitalk`又是需要评论者登录`GitHub`的，这样会带来相当多的使用不便。因此`valine`算是中文博客目前相对更好的一个评论插件选择了。但是诡异的事，`valine`本身的插件配置中，`CDN`却选择了墙外的地址，因此在正常情况下，墙内用户在访问装有`valine`的页面的时候，很可能会遇到加载极慢的问题，因此对于这个插件我是做了一些优化的。在当前使用的主题的`_config.yml`中找到`valine`对应的配置块，额外添加一条子配置`valine`并如下面格式添加`jsdelivr`的`CDN`加速地址即可。
+```
+valine:
+  valine: //cdn.jsdelivr.net/npm/valine@1.4.18/dist/Valine.min.js  #为了cd加速
+  enable: true
+```
+按照官网的指引流程和上面的优化方法进行配置之后，博客的所有评论都将存储到`LeanCloud`的服务实例中，并且拥有相当不错的加载速度。
 
 ## **CSS样式调整和EJS修改**
+这里的调优其实很多时候是出于对`landscape`这个默认皮肤的无奈。`Hexo`毕竟还是一个开源项目，事实上在这段时间的使用过程中，还是发现了很多其本身的问题。好在解决方法也不复杂，只要对`html`、`css`和`JavaScript`有最低限度的了解和语法知识就可以完全解决。
+
+### **折叠块的渲染**
+首先是`<details>`语法块的问题，Hexo对折叠内容的默认渲染可以说用惨绝人寰来形容，就是压根没有css式样，所以当博客需要使用折叠快的时候，我们需要手动添加一些关于折叠块的属性来确保视觉上勉强能看：
+```html
+<details style="box-shadow: 2px 2px 5px; border-radius: 6px; padding: .5em .5em .5em;">
+    <summary><b>【鬼谷说】菊石（其一）：旧神的涅槃</b></summary>
+    <div style="position: relative; padding-bottom: 75%; height: 0;">
+        <iframe width="600" height="450" src="https://player.bilibili.com/player.html?aid=597067931&bvid=BV16B4y1X7ap&cid=734651916&page=1&high_quality=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
+    </div>
+    <br>
+</details>
+```
+具体的呈现就会是这样一个效果。虽然依然很丑，但是至少能看。
+<details style="box-shadow: 2px 2px 5px; border-radius: 6px; padding: .5em .5em .5em;">
+    <summary><b>【鬼谷说】菊石（其一）：旧神的涅槃</b></summary>
+    <div style="position: relative; padding-bottom: 75%; height: 0;">
+        <iframe width="600" height="450" src="https://player.bilibili.com/player.html?aid=597067931&bvid=BV16B4y1X7ap&cid=734651916&page=1&high_quality=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
+    </div>
+    <br>
+</details>
+<br>
+
+### **Tags和Categories页面支持**
+非常糟心的一件事是，`landscape`主题似乎没有对`Tags`和`Categories`的根页面进行`ejs`的支持，这会导致如果用户单纯地跟着官方文档通过`hexo命令行`创建一个`source/tags/index.md`或者`source/categories/index.md`页面的话，在博客中其实是无法正常显示的。而在主题的`layout`目录中，原始的`tag.ejs`和`category.ejs`又是有用的，如无必要则尽可能不要随意修改它们。
+
+因此为了让博客在`landscape`主题中可以正常显示`Tags`和`Categories`页面，我在`layout`目录下需要额外创建两个`ejs`模板文件，用于让这两个页面可以正常渲染和呈现，代码如下：
+
+`node_module/hexo-theme-landscape/layout/tags.ejs`
+```js
+<article id="post" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-inner">
+      <header class="article-header">
+        <h1 class="article-title" itemprop="name">
+          <%= page.title %>
+        </h1>
+      </header>
+    <div class="article-entry" itemprop="articleBody">
+      <% if (site.tags.length){ %>
+        <%- list_tags({show_count: true}) %>
+      <% } %>
+    </div>
+  </div>
+</article>
+```
+`node_module/hexo-theme-landscape/layout/categories.ejs`
+```js
+<article class="article article-type-post show">
+  <div class="article-inner">
+    <header class="article-header">
+      <h1 class="article-title" itemprop="name">
+        <%= page.title %>
+      </h1>
+    </header>
+    <div class="article-entry" itemprop="articleBody">
+      <% if (site.categories.length){ %>
+        <%- list_categories(site.categories, {
+          show_count: true,
+          class: 'category',
+          style: 'list',
+          depth: 3,
+          separator: ''
+        }) %>
+      <% } %>
+    </div>
+  </div>
+</article>
+```
+在添加了上述ejs模板后，只要在`source/tags/index.md`或者`source/categories/index.md`中分别添加对应的`layout`配置即可：
+
+`source/tags/index.md`
+```
+---
+title: 𝑩𝒍𝒐𝒈 𝑻𝒂𝒈𝒔
+date: 2022-06-14 10:00:13
+layout: tags
+comments: false
+---
+```
+`source/categories/index.md`
+```
+---
+title: 𝑩𝒍𝒐𝒈 𝑪𝒂𝒕𝒆𝒈𝒐𝒓𝒊𝒆𝒔
+date: 2022-06-14 10:00:13
+layout: categories
+comments: false
+---
+```
+之后修改`node_module/hexo-theme-landscape/_config.yml`，在顶部菜单栏中添加对应的页面路径，然后重新生成页面后，就可以在博客中访问正常的`Tags`和`Categories`页面了。
+
 
 ---
+#### **以上就是关于本博客建设的简要技术说明，未来如果有时间我会更新一些关于博客建设的细节和Hexo本身调优的心得。** 
+
 *感谢阅读*
