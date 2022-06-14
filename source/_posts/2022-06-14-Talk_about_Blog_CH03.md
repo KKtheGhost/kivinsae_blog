@@ -38,15 +38,15 @@ tags:
 /usr/bin/hexo clean
 /usr/bin/hexo generate
 ```
-之后，如果配置和模块没有异常的话，生成器就会在`$HEXO_HOME/public/`下生成博客所需要的**所有静态页面和依赖文件**。但是需要注意的是，假如你通过类似`Apache2`、`Nginx`这类的负载均衡器来作为你的服务端口进程，那么在`site-available`的配置文件中，请尽可能不要直接把`$HEXO_HOME/public/`作为你的`web服务`的根目录。因为这样的话在页面重生成期间，会短暂的导致页面的显示异常。更加合适的方式是单独使用一个其他位置的目录，然后每一次在生成新版本的页面之后，通过`rsync`或者`cp`等命令，讲新版的页面内容覆盖过去。例如这样：
+之后，如果配置和模块没有异常的话，生成器就会在`$HEXO_HOME/public/`下生成博客所需要的**所有静态页面和依赖文件**。但是需要注意的是，假如你通过类似`Apache2`、`Nginx`这类的负载均衡器来作为你的服务端口进程，那么在`site-available`的配置文件中，请尽可能不要直接把`$HEXO_HOME/public/`作为你的`web服务`的根目录。因为这样的话在页面重生成期间，会短暂的导致页面的显示异常。更加合适的方式是单独使用一个其他位置的目录，然后每一次在生成新版本的页面之后，通过`rsync`或者`cp`等命令，把新版的页面内容覆盖过去，这样可以大幅缩短博客的不可用时间。例如这样：
 ```bash
 cp -r $HEXO_HOME/public/* /var/www/hexo/public/
 ```
 
 ### **HTTPS和CertBot**
-拥有了自己的博客以后，我们还是需要稍微为自己的博客的安全性负责的。这里并不是说这个博客有什么流量吸引歹人来攻击，而是关闭`HTTP 80端口`访问、强制`HTTPS 443`访问、使用全球授信的证书链作为`SSL证书`，是任何一个网站搭建过程中**最最最根本的基本常识**。是的，这里在**明示**我国大量政企事业单位的IT从业者（或部门的领导）是缺乏基本常识的（乐）。
+拥有了自己的博客以后，我们还是需要稍微为自己的博客的安全性负责的。这里并不是说这个博客有什么流量吸引歹人来攻击，而是关闭`HTTP 80`访问、强制`HTTPS 443`访问、使用全球授信的证书链作为`SSL证书`，是任何一个网站搭建过程中**最最最根本的基本常识**。是的，这里在**明示**我国大量政企事业单位的IT从业者（或部门的领导）是缺乏基本常识的（乐）。
 
-相对于企业级昂贵的`SSL证书`，其实个人对于证书的选择面非常自由且廉价。在完成页面的部署之后，假如你使用的是`Apache2`、`Nginx`这种主流的负载均衡，那么完全可以用`CertBot`来进行一键自动HTTPS证书签发和部署，非常非常方便。此处以`Nginx`为例：
+相对于企业级昂贵的`SSL证书`，其实个人对于证书的选择面非常广阔且廉价。在完成页面的部署之后，假如你使用的是`Apache2`、`Nginx`这种主流的负载均衡，那么完全可以用`CertBot`来进行一键自动HTTPS配置、证书签发和部署，非常非常方便。此处以`Nginx`为例：
 
 ```bash
 # Install essential packages.
@@ -89,24 +89,24 @@ $~ sudo systemctl status certbot.timer
 #To test the renewal process, you can do a dry run with certbot:
 $~ sudo certbot renew --dry-run
 ```
-完成上面一系列命令以后，正常情况下代理`Hexo`静态页面的负载均衡服务，已经设置了有效的SSL证书，并且会不断的进行更新，同时负载均衡的`HTTP 80端口`，也会被强制rewrite到`HTTPS 443端口`提供服务。
+完成上面一系列命令以后，正常情况下代理`Hexo`静态页面的负载均衡服务，已经设置了有效的SSL证书，并且会不断的自动更新`SSL证书`，同时负载均衡的`HTTP 80`端口，也会被强制rewrite到`HTTPS 443`端口提供服务。
 
 题外话，如果你想拥有一个有效期更长的个人证书，其实`CloudFlare`提供了长达15年的个人证书供免费用户下载，只能说强者恐怖如斯。
 
 ### **GitHub Action和自动化**
 **我是个懒狗。** 所以我喜欢在尽可能少的页面完成博客的写作。
 
-我喜欢`MarkDown`和`LaTeX`这样的语法编辑所带来的内容排版的确定性，当然，`LaTeX`写起来有点点麻烦，所以常规情况下`MarkDown`是博客写作的不二之选。如果可以，我希望能够以这样的方式来进行博客的写作和发布：
-1. 在任意我喜欢的代码编辑器中，进行可以Preview的`MarkDown`文档编辑。
+我喜欢`MarkDown`和`LaTeX`这样的标记式语言所带来的内容和排版的确定性，当然，`LaTeX`写起来有点点麻烦，所以常规情况下`MarkDown`是博客写作的不二之选。如果可以，我希望能够以这样的方式来进行博客的写作和发布：
+1. 在任意我喜欢的代码编辑器中，进行可以`Preview`的`MarkDown`文档编辑。
 2. 在完成任意文档、草稿、`CSS`和`EJS`调整之后，只需要一个简单的命令，就可以在远程的服务器和对象存储中，生成、发布并更新博客内容。
 
 由于目前这个博客的代码托管在了`GitHub`上，所以最简单的方法就是直接使用`GitHub Action`来作为自动化的方案。事实上现代的代码托管平台，例如`GitHub`、`GitLab`、乃至于`Azure`这样的云服务，对`CICD Pipeline`的支持都已经非常出色了，任何有稍许计算机知识的人都可以快速搭建自己的`CICD`工作流。
 
-那么言归正传，在这个博客搭建的一开始，我就写好了对应的`GitHub Action`，当时写的时候主要是两个原则：
+那么言归正传，在这个博客搭建的一开始，我就写好了对应的`GitHub Action`，当时写的时候主要是两个目标：
 - 不引入第三方的容器镜像，原因是我不想再审一遍别人的`dockerfile`，而且引入镜像会让`Action`很慢。
 - 尽量少的`Step`，这样无论是`debug`还是执行都会很简单。
 
-所以以下便是本博客在使用的`GitHub Action Workflow`：
+因此，在这个工作流中，只使用了官方`ubuntu-latest`作为运行镜像。以下便是本博客在使用的`GitHub Action Workflow`：
 ```yml
 name: Publish Blog
 on: [push, pull_request]
@@ -147,27 +147,28 @@ jobs:
 - 初始化容器，配置容器的`ssh rsa私钥`和`.ssh`目录权限，配置目标服务器信息。
 - 确保远程服务器上的更新脚本拥有可执行权限。
 - 远程执行服务器上的自动更新、清理、`Hexo`生成脚本。
+
 同时，工作流文件声明了只有在`push`到主分支，或者`PR`到主分支的前提下，才会触发运行。
 
-通过这样的工作流，我只要在本地`IDE`进行文档的书写和编辑，然后通过`COMMIT_MASTER`脚本进行主分支推送就可以了。然后在10-20秒后，我的博客就会无感地更新所有新编辑的内容，而且我可以确保所有的变更，都是通过版本管理进行跟踪的。永远不需要担心任何一个修改发生在了自己想不起来的地方。
+通过这样的工作流，我只需要在本地`IDE`进行文档的书写和编辑，然后通过`COMMIT_MASTER`脚本进行主分支推送就可以了。然后在10-20秒后，我的博客就会**无感且自动地**更新所有新编辑的内容。而且我可以确保所有的变更，都是通过版本管理进行跟踪的，永远不需要担心任何一个修改发生在了自己想不起来的地方。
 
 ### **防火墙问题**
 由于**一些众所周知的问题**，绝大多数脑回路正常的工程师都不会把自己博客服务器的本体放在中国大陆。但是大量的海外机房由于**另一个众所周知的原因**，国内直接访问是会有很大的问题的。所以这个月我花了一些时间来处理从中国大陆访问这个博客的问题。
 
-这个时候，Hexo的静态页面的好处就体现出来了。我并不希望多花不必要的服务器费用在国内重新搭建一个镜像服务，同时我也希望国内的访问能够同样稳定快速。那么这个时候，非大陆的阿里云`OSS`的静态网站托管似乎成了一个最佳的选择，因为阿里云的海外节点只要你不作死是基本不会被墙的，所以算是一个非常好的选择。
+这个时候，`Hexo`的静态页面的好处就体现出来了。我不希望花不必要的服务器费用在国内重新搭建一个镜像服务器，同时我也希望国内的访问能够保持稳定快速。那么这个时候，阿里云海外地域的`OSS`的静态网站托管服务似乎成了一个最佳的选择，因为阿里云的海外节点只要你不作死是基本不会被墙的，算是一个非常好的选择。
 
-既然说到阿里云OSS静态网站托管，具体的部署方式可以参阅[这篇文章](https://help.aliyun.com/document_detail/31872.html)。其本质上就是阿里在`OSS`的基础上为用户额外提供了一层负载均衡代理，同时用户还可以白嫖阿里云OSS加速节点的全球加速效果（严格来说是要钱的，但是考虑个人站点的一丝丝流量，**约等于不要钱**）
+说到阿里云OSS静态网站托管，具体的部署方式可以参阅[这篇文章](https://help.aliyun.com/document_detail/31872.html)。其本质上就是阿里在`OSS`的基础上为用户额外提供了一层负载均衡代理，同时用户还可以白嫖阿里云`OSS`加速节点的全球加速效果（严格来说是要钱的，但是考虑个人站点的一丝丝流量，**约等于不要钱**）
 
 而我这边其实只需要在自动生成脚本的最后面增加一行命令，就可以完成这个节点的同步：
 ```bash
 ossutil64 sync /var/www/hexo/public/ oss://<bucket_name>/ --delete --force
 ```
-利用阿里云提供的ossutil64工具，我们可以非常方便把本地静态页面目录的所有内容同步到OSS上，并立刻生效。至此，我的博客的全部部署问题已经全部解决。下面是一张架构图，有助于读者更好理解这个架构的拓扑结构：
+利用阿里云提供的`ossutil64`工具，我们可以非常方便把本地静态页面目录的所有内容同步到`OSS`上，并立刻生效。至此，我的博客的全部部署问题已经全部解决。下面是一张架构图，有助于读者更好理解这个架构的拓扑结构：
 
 <img src="https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/2022-06-14-Talk_about_Blog_CH03_01.drawio-fs8.png" width="480">
 
 ## **插件的选择和优化**
-Hexo拥有一批相当数量的插件开发者，因此对于Hexo的插件选择，其实是比较丰富。不过我个人还是遵循了就简原则，尽可能使用了最少的插件，以下为目前的插件列表：
+`Hexo`拥有相当数量的插件开发者，因此`Hexo`的插件选择是很丰富的。不过我个人还是遵循了就简原则，尽量少的引入第三方插件，以下为目前的插件列表：
 ```json
 "hexo-bilibili-card": "^0.6.0",
 "hexo-blog-encrypt": "^3.1.6",
@@ -179,11 +180,13 @@ Hexo拥有一批相当数量的插件开发者，因此对于Hexo的插件选择
 "valine": "^1.4.18"
 ```
 
-其中`hexo-bilibili-card`、`hexo-blog-encrypt`、`hexo-ruby-character`的效果可以在[Hexo Blog plugins test field](https://cnblog.kivinsae.com/2018/07/23/2018-07-23-Hexo_Plugin_TestField/)中查看，分别用于页面内容的丰富化呈现。
+其中`hexo-bilibili-card`、`hexo-blog-encrypt`、`hexo-ruby-character`的效果可以在 **[Hexo Blog plugins test field](https://cnblog.kivinsae.com/2018/07/23/2018-07-23-Hexo_Plugin_TestField/)** 中查看，分别用于页面内容的丰富化呈现。
 
-`hexo-renderer-ejs`为Hexo默认主题`landscape`自带的ejs解析插件。`hexo-renderer-markdown-it`为MarkDown解析加强插件。`hexo-theme-landscape`为Hexo默认主题本身。`nodejieba`为中文分词函数库。
+`hexo-renderer-ejs`为`Hexo`默认主题`landscape`自带的ejs解析插件。`hexo-renderer-markdown-it`为`MarkDown`解析加强插件。`hexo-theme-landscape`为`Hexo`默认主题本身。`nodejieba`为中文分词函数库。
 
-需要着重讲一下是评论插件`valine`，具体的插件介绍和安装指南可以参考 **[Valine官网](https://valine.js.org/)** 。随着韩国几款主流的论坛评论插件例如`livere`之流对网络的要求愈发变态，而`Gitalk`又是需要评论者登录`GitHub`的，这样会带来相当多的使用不便。因此`valine`算是中文博客目前相对更好的一个评论插件选择了。但是诡异的事，`valine`本身的插件配置中，`CDN`却选择了墙外的地址，因此在正常情况下，墙内用户在访问装有`valine`的页面的时候，很可能会遇到加载极慢的问题，因此对于这个插件我是做了一些优化的。在当前使用的主题的`_config.yml`中找到`valine`对应的配置块，额外添加一条子配置`valine`并如下面格式添加`jsdelivr`的`CDN`加速地址即可。
+需要着重讲一下是评论插件`valine`，具体的插件介绍和安装指南可以参考 **[Valine官网](https://valine.js.org/)** 。随着韩国几款主流的论坛评论插件例如`livere`之流对网络的要求愈发变态，而`Gitalk`又是需要评论者登录`GitHub`的，这些插件的使用变得越来越麻烦，无论是对博主还是访问者来说。
+
+目前看来，`valine`算是中文博客目前相对更好的一个评论插件选择了。但是诡异的是，`valine`本身的插件配置中，`CDN`却选择了墙外的服务，因此墙内用户在访问装有`valine`插件的页面的时候，很可能会遇到加载极慢的问题。所以，对于这个插件我是做了一些优化的。在当前使用的主题的`_config.yml`中找到`valine`对应的配置块，额外添加一条子配置`valine`并按照如下面格式添加`jsdelivr`的`CDN`加速地址即可。
 ```
 valine:
   valine: //cdn.jsdelivr.net/npm/valine@1.4.18/dist/Valine.min.js  #为了cd加速
@@ -192,10 +195,10 @@ valine:
 按照官网的指引流程和上面的优化方法进行配置之后，博客的所有评论都将存储到`LeanCloud`的服务实例中，并且拥有相当不错的加载速度。
 
 ## **CSS样式调整和EJS修改**
-这里的调优其实很多时候是出于对`landscape`这个默认皮肤的无奈。`Hexo`毕竟还是一个开源项目，事实上在这段时间的使用过程中，还是发现了很多其本身的问题。好在解决方法也不复杂，只要对`html`、`css`和`JavaScript`有最低限度的了解和语法知识就可以完全解决。
+这里的调优其实很多时候是出于对`landscape`这个默认皮肤的无奈。`Hexo`毕竟还是一个开源项目，在这段时间的使用过程中，还是发现了很多其本身的问题。好在应对方法也不复杂，只要对`html`、`css`和`JavaScript`有最低限度的了解和语法知识就可以轻松解决。
 
 ### **折叠块的渲染**
-首先是`<details>`语法块的问题，Hexo对折叠内容的默认渲染可以说用惨绝人寰来形容，就是压根没有css式样，所以当博客需要使用折叠快的时候，我们需要手动添加一些关于折叠块的属性来确保视觉上勉强能看：
+首先是`<details>`语法块的问题，`Hexo`对折叠内容的默认渲染可以说用惨绝人寰来形容，就是压根没有css式样，所以当博客需要使用折叠快的时候，我们需要手动添加一些关于折叠块的属性来确保视觉上勉强能看：
 ```html
 <details style="box-shadow: 2px 2px 5px; border-radius: 6px; padding: .5em .5em .5em;">
     <summary><b>【鬼谷说】菊石（其一）：旧神的涅槃</b></summary>
@@ -216,12 +219,12 @@ valine:
 <br>
 
 ### **Tags和Categories页面支持**
-非常糟心的一件事是，`landscape`主题似乎没有对`Tags`和`Categories`的根页面进行`ejs`的支持，这会导致如果用户单纯地跟着官方文档通过`hexo命令行`创建一个`source/tags/index.md`或者`source/categories/index.md`页面的话，在博客中其实是无法正常显示的。而在主题的`layout`目录中，原始的`tag.ejs`和`category.ejs`又是有用的，如无必要则尽可能不要随意修改它们。
+非常糟心的一件事是，`landscape`主题似乎没有对`Tags`和`Categories`的根页面进行`ejs`的支持。如果用户单纯地跟着官方文档通过`hexo命令行`创建一个`source/tags/index.md`或者`source/categories/index.md`页面的话，在博客中其实是无法正常显示的。而在主题的`layout`目录中，原始的`tag.ejs`和`category.ejs`又被其他页面功能调用，所以，尽可能不要随意修改它们。
 
-因此为了让博客在`landscape`主题中可以正常显示`Tags`和`Categories`页面，我在`layout`目录下需要额外创建两个`ejs`模板文件，用于让这两个页面可以正常渲染和呈现，代码如下：
+那么，为了让博客在`landscape`主题中可以正常显示`Tags`和`Categories`页面，我在`layout`目录下需要额外创建两个`ejs`模板文件，用于让这两个页面可以正常渲染和呈现，代码如下：
 
-`node_module/hexo-theme-landscape/layout/tags.ejs`
-```js
+```html
+<!-- node_module/hexo-theme-landscape/layout/tags.ejs -->
 <article id="post" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-inner">
       <header class="article-header">
@@ -237,8 +240,8 @@ valine:
   </div>
 </article>
 ```
-`node_module/hexo-theme-landscape/layout/categories.ejs`
-```js
+```html
+<!-- node_module/hexo-theme-landscape/layout/categories.ejs -->
 <article class="article article-type-post show">
   <div class="article-inner">
     <header class="article-header">
@@ -262,8 +265,8 @@ valine:
 ```
 在添加了上述ejs模板后，只要在`source/tags/index.md`或者`source/categories/index.md`中分别添加对应的`layout`配置即可：
 
-`source/tags/index.md`
 ```
+# source/tags/index.md
 ---
 title: 𝑩𝒍𝒐𝒈 𝑻𝒂𝒈𝒔
 date: 2022-06-14 10:00:13
@@ -271,8 +274,8 @@ layout: tags
 comments: false
 ---
 ```
-`source/categories/index.md`
 ```
+# source/categories/index.md
 ---
 title: 𝑩𝒍𝒐𝒈 𝑪𝒂𝒕𝒆𝒈𝒐𝒓𝒊𝒆𝒔
 date: 2022-06-14 10:00:13
