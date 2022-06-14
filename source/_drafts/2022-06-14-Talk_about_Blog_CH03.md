@@ -1,5 +1,7 @@
 ---
 title: 聊聊个人博客这件事（三）
+catagories:
+- 博客搭建和优化
 tags:
 - CHN
 - 随想
