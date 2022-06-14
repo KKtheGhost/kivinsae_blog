@@ -1,1 +1,0 @@
-# ossutil64 sync /var/www/hexo/public/ oss://kivinsae-com-oss/ --delete
