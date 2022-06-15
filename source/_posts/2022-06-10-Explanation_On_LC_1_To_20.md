@@ -54,3 +54,53 @@ int* twoSum(int* nums, int numsSize, int target, int* returnSize){
     end:return Res;
 }
 ```
+
+## **[No.16 Two Sum (最接近的三数之和)](https://leetcode.com/problems/two-sum/)**
+`// @lc MEDIUM`
+
+**Given an integer array nums of length n and an integer target, find three integers in nums such that the sum is closest to target.
+Return the sum of the three integers.
+You may assume that each input would have exactly one solution.**
+
+这道题和`Q15`其实几乎没有什么区别，对于这种三数之和的问题，基本思路直接就是三个`index`遍历问题。为了防止重复遍历增加运行时间，一个比较取巧的方式是增加一个左侧`index`的单增限制。与此同时，为了确保`middle`和`right`的两个`index`的移动是可控严谨的，需要在对整个`nums`数列进行遍历前，首先进行排序。因此和`Q15`一样，我们需要对C语言`<stdlib.h>`标准库中的 **[qsort()](https://www.tutorialspoint.com/c_standard_library/c_function_qsort.htm)** 函数非常了解。除此以外，本题没什么需要特别注意的边界陷阱。
+
+那么直接看代码的注释吧：
+```c
+/* qsort()的$4是有固定写法的，就是下面这个compare函数 */
+int compare(const void *a, const void *b)
+{
+    return *(int*)a - *(int*)b;
+}
+/* 正式的算法部分 */
+int threeSumClosest(int* nums, int numsSize, int target){
+    /* numsSize == 3 特殊情况 */
+    if (numsSize ==  3) {return nums[0]+nums[1]+nums[2];}
+    /* 此处需要给res赋予一个大于target最大值的初始值即可 */
+    int res = 9999,middle,right;
+    /* 数组qsort排序预处理 */
+    qsort(nums, numsSize, sizeof(nums[0]), compare);
+    /* left index遍历 */
+    for (int i = 0; i < numsSize - 2; ++i) {
+        /* 设定middle index和right index的初始值 */
+        middle = i + 1;
+        right = numsSize - 1;
+        /* 设置第二层遍历的终止条件，本质是把O(n*2)降低到O(n) */
+        while (middle < right)
+        {
+            int sum = nums[i] + nums[middle] + nums[right];
+            /* 因为数组经过qsort，所以sum大于target则right index左移。 */
+            if (sum > target)
+                right--;
+            /* 因为数组经过qsort，所以sum小于target则middle index右移。 */
+            else if (sum < target)
+                middle++;
+            /* 特殊情况，如果sum等于target了，直接结束遍历，goto返回结果。 */
+            else {res = target; goto end;}
+            /* 常规判断：如果sum更接近target，则更新res的值 */
+            res = (abs(sum - target) < abs(res - target)) ? sum : res;
+        }
+    }
+    end:;
+    return res;
+}
+```
