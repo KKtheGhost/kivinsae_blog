@@ -2,7 +2,7 @@
 title: LeetCode Q1-20 思路详解 (持续更新中)
 date: 2022-06-10 23:30:22
 categories:
-- LeetCode思路详解（C）
+- [LeetCode,LeetCode思路详解（C）]
 tags: 
 - CHN
 - 编程
