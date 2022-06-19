@@ -180,7 +180,7 @@ ossutil64 sync /var/www/hexo/public/ oss://<bucket_name>/ --delete --force
 "valine": "^1.4.18"
 ```
 
-其中`hexo-bilibili-card`、`hexo-blog-encrypt`、`hexo-ruby-character`的效果可以在 **[Hexo Blog plugins test field](https://cnblog.kivinsae.com/2018/07/23/2018-07-23-Hexo_Plugin_TestField/)** 中查看，分别用于页面内容的丰富化呈现。
+其中`hexo-bilibili-card`、`hexo-blog-encrypt`、`hexo-ruby-character`的效果可以在 **[Hexo Blog plugins test field](https://www.kivinsae.com/2018/07/23/2018-07-23-Hexo_Plugin_TestField/)** 中查看，分别用于页面内容的丰富化呈现。
 
 `hexo-renderer-ejs`为`Hexo`默认主题`landscape`自带的ejs解析插件。`hexo-renderer-markdown-it`为`MarkDown`解析加强插件。`hexo-theme-landscape`为`Hexo`默认主题本身。`nodejieba`为中文分词函数库。
 
