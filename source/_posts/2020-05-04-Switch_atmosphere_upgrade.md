@@ -1,5 +1,5 @@
 ---
-title: Switch atmosphere大气层9.2.0升级10.0.2 踩坑详解
+title: Switch atmosphere 大气层 9.2.0 升级 10.0.2 踩坑详解
 date: 2018-07-23 16:56:41
 categories:
 - [硬件相关,Switch]
