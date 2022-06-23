@@ -50,8 +50,8 @@ tags:
 
 #### **四、使用 `ChoiDujourNX` 升级系统固件至最新版本**
 使用方法详见：
-- [ChoiDujourNX使用方法视频](https://www.youtube.com/watch?v=n5odwq8m0A0)
-- [ChoiDujourNX使用方法图文](http://www.ns-atmosphere.com/zh/tutorials/update801/)
+- [ChoiDujourNX 使用方法视频](https://www.youtube.com/watch?v=n5odwq8m0A0)
+- [ChoiDujourNX 使用方法图文](http://www.ns-atmosphere.com/zh/tutorials/update801/)
 - 升级后系统会进行重启，之后使用 `hekate` 正常引导 `EMUMMC` 的时候可能会在进入 `kosmos` 之后发生红字报错，这个是正常的。请根据实际的报错信息尽心故障排查，如果无法解决请在评论区留言。
 
 #### **五、更新最新版本的 `SigPatch` 和 `ES Patch`**
@@ -70,4 +70,4 @@ Modul: FS (2)
 Description: Invalid NCA (Missing Sigpatches or too low firmware) (4518)
 ```
 上述的两个报错基本都是由于系统 `ES Patch` 或者 `Sigpatch` 缺失或者异常导致的，由于我们本步骤中已经更新了 `SigPatch`，因此之后需要做的时候就是正确的更新适配 `10.0.0+` 固件版本的 `ES Patches`。
-将上面准备工作中的 `Fusee.zip` 解压，将里面的内容根据目录结构复制覆盖到 **Switch** 的 `SD卡目录` 中。之后重启重新引导一次系统就可以正确进行 `NSP` 的签名与安装。
+将上面准备工作中的 `Fusee.zip` 解压，将里面的内容根据目录结构复制覆盖到 **Switch** 的 SD 卡目录 中。之后重启重新引导一次系统就可以正确进行 `NSP` 的签名与安装。
