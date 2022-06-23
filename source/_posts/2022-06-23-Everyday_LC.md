@@ -44,7 +44,7 @@ int scheduleCourse(int** courses, int coursesSize, int* coursesColSize){
     return res;
 }
 ```
-Sometimes we might get annoyed with `qsort()` in `C lib` because it requires a `cmp()` function to execute the **Quicksort** function. But in **[630](https://leetcode.com/problems/course-schedule-iii/)**, the flexibity of `qsort()` make everything simple and clear. The `courses` array sorted by `the end day` would be the key condition for the `for loop` below.
+Sometimes we might get annoyed with `qsort()` in `C lib` because it requires a `cmp()` function to execute the **Quicksort** function. But in **[630](https://leetcode.com/problems/course-schedule-iii/)**, the flexibility of `qsort()` make everything simple and clear. The `courses` array sorted by `the end day` would be the key condition for the `for loop` below.
 
 A two-dimension int array compare function is easy to write, Basically we could write a similar function for any **non-malloc n-demension array** as the form below:
 ```c
@@ -53,12 +53,12 @@ int CourseCmp(const void *a, const void *b) {
 }
 ```
 The key point is the `for loop`. It runs a interative logic in every single loop.
-- `tsum` stores the valid sum of course durations and plays as a safe house for the courses which ends earlier than `course[i]`.
+- `tsum` stores the valid sum of course durations and plays as a safe house for the courses which ends earlier than `course[i][1]`.
 - `res` records the number of the valid courses.
 - `max` helps find out the longest duration in current `tsum`. Then kicks it off from `tsum` and replaces it by the new duration time of `course[i]`.
 
 Finally the loop goes to its end and the `res` variable stores the current `count` of valid durations.
 
 ---
-- Time complexity : $O(n * count)$
-- Space complexity : $O(1)$
+- Time complexity : <font style="font-family:'Georgia'"><b>O(n * count)</b></font>
+- Space complexity : <font style="font-family:'Georgia'"><b>O(1)</b></font>
