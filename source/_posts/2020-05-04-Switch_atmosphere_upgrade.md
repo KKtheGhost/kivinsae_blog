@@ -8,7 +8,7 @@ tags:
 - Nintendo Switch
 ---
 ![授权转载](https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/harukoNX-fs8.png)
-<font color=Red><b>特别提醒:本人反对任何形式通过破解 Switch 侵害游戏公司利益的行为</b></font>
+<font color=Red><b>特别提醒：本人反对任何形式通过破解 Switch 侵害游戏公司利益的行为</b></font>
 
 ## **阅前须知**
 - 本文由 `HarukoNX` 本人授权，任何其他平台和个人不得无端转载，本人和 `HarukuNX` 保留相关解释权。
