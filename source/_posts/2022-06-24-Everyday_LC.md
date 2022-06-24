@@ -8,7 +8,7 @@ tags:
 - LeetCode
 - C
 ---
-Today's Daily Challenge is **[1354. Construct Target Array With Multiple Sums](https://leetcode.com/problems/construct-target-array-with-multiple-sums/)** <font color=Red><b>HARD</b></font>. The most simple way solve today's challenge would be qsort(). While only **one simple element** is changed in every loop, it's cost would be significantly reduced.
+Today's Daily Challenge is **[1354. Construct Target Array With Multiple Sums](https://leetcode.com/problems/construct-target-array-with-multiple-sums/)** <font color=Red><b>HARD</b></font>. The most simple way to solve today's challenge would be qsort(). While only **one simple element** is changed in every loop, it's cost would be significantly reduced.
 
 So the basic logic is here:
 ```
