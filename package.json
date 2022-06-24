@@ -27,6 +27,6 @@
     "hexo-server": "^3.0.0",
     "hexo-theme-landscape": "^0.0.3",
     "nodejieba": "^2.6.0",
-    "valine": "^1.4.18"
+    "valine": "^1.5.0"
   }
 }
