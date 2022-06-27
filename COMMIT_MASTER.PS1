@@ -1,3 +1,6 @@
+git update-index --chmod=+x .\public_sync.sh
+git update-index --chmod=+x .\COMMIT_MASTER.sh
+
 echo "Please input commit info in AngularJS form (<type>(topic): details):"
 $type= Read-Host -Prompt "Enter the type of commit"
 $topic= Read-Host -Prompt "Enter the topic of commit"
