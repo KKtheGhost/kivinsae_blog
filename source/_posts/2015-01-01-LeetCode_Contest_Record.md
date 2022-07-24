@@ -17,6 +17,8 @@ Because LeetCode was founded in the heart of Silicon Valley in 2015.
 | 299 |4674 / 22827| KKtheGhost  | 12 | 2:06:26 | 0:14:10 | 1:02:29🐞8 | 1:26:26 | |
 | 300 | 13767 / 25150 |	KKtheGhost | 3 | 0:26:31 | 0:26:31 ||||
 | 301 | 2860 / 16433 | KKtheGhost <font color="Purple"><b><i>Virtual</b></i></font> | 12 | 1:11:40 | 0:12:26 | 1:11:40 | 0:48:20 | |
+|302|13816 / 24327|	KKtheGhost| 	7|	1:19:26|	 0:07:30|	 0:39:26🐞8|||
+|303|10040 / 17316|	KKtheGhost| 	7|	0:22:23|	 0:03:18|	 0:17:23🐞1|||	
 | | | | | | | | | |
 
 ### **Biweekly Contests Record**
