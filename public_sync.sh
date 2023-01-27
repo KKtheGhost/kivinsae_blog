@@ -41,4 +41,4 @@ nginx -t
 nginx -s reload
 
 # Ossutil sync to www.kivinsae.com
-ossutil64 sync /var/www/hexo/public/ oss://kivinsae-com-oss/ --delete --force
+ossutil64 sync /var/www/hexo/public/ oss://kivinsae-com-web/ --delete --force
