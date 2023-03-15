@@ -26,8 +26,8 @@ jobs:
           SSH_KEY: ${{ secrets.KIVINSAE_BLOG_RSAKEY }}
           SSH_HOST: ${{ secrets.KIVINSAE_BLOG_HOST }}
 
-      - name: Pull the master branch of kivinsae-blog
-        run: git pull git@github.com:KKtheGhost/kivinsae_blog.git --config core.sshCommand="ssh -i ~/.ssh/kivinsae.key"
+      - name: Clone the master branch of kivinsae-blog
+        run: git clone git@github.com:KKtheGhost/kivinsae_blog.git --config core.sshCommand="ssh -i ~/.ssh/kivinsae.key"
 
       - name: Generate the config.yml from templates
         run: |
