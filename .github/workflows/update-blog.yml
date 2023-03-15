@@ -1,7 +1,6 @@
 name: Publish Blog
 on: [push, pull_request]
 jobs:
-
   build:
     name: "Publish My Blog"
     runs-on: ubuntu-latest
@@ -27,8 +26,58 @@ jobs:
           SSH_KEY: ${{ secrets.KIVINSAE_BLOG_RSAKEY }}
           SSH_HOST: ${{ secrets.KIVINSAE_BLOG_HOST }}
 
-      - name: Make the public_sync script could be executed.
-        run: ssh kivinsae-blog 'chmod +x /opt/hexo/public_sync.sh'
+      - name: Pull the master branch of kivinsae-blog
+        run: git pull git@github.com:KKtheGhost/kivinsae_blog.git --config core.sshCommand="ssh -i ~/.ssh/kivinsae.key"
 
-      - name: Executing remote ssh commands to republish blog
-        run: ssh kivinsae-blog '/usr/local/bin/public_sync'
+      - name: Generate the config.yml from templates
+        run: |
+          cp -rf _config.module.yml _config.yml
+          cp -rf node_modules/hexo-theme-landscape/_config.module.yml node_modules/hexo-theme-landscape/_config.yml
+        working-directory: ./kivinsae_blog
+
+      - name: Replace the SECRETS in config.yml
+        run: |
+          sed -i "s/TAG_ENCRYPT_PSWD/$ENCRYPT_PSWD/g" _config.yml
+          sed -i "s/TAG_PRIVATE_PSWD/$PRIVATE_PSWD/g" _config.yml
+          sed -i "s/LEANCLOUD_APPID/$LC_APPID/g" node_modules/hexo-theme-landscape/_config.yml
+          sed -i "s/LEANCLOUD_APPKEY/$LC_APPKEY/g" node_modules/hexo-theme-landscape/_config.yml
+        working-directory: ./kivinsae_blog
+        env:
+          ENCRYPT_PSWD: ${{ secrets.BLOG_ENCRYPT }}
+          PRIVATE_PSWD: ${{ secrets.BLOG_PRIVATE }}
+          LC_APPID: ${{ secrets.LEANCLOUD_APPID }}
+          LC_APPKEY: ${{ secrets.LEANCLOUD_APPKEY }}
+
+      - name: Install NPM and OSSUTIL
+        run: |
+          curl -fsSL https://deb.nodesource.com/setup_19.x | sudo -E bash - &&\
+          sudo apt-get install -y nodejs
+          sudo -v ; curl https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
+
+      - name: Install Hexo
+        run: npm install -g hexo-cli
+      
+      - name: Generate the Blog content
+        run: |
+          hexo clean
+          hexo generate
+        working-directory: ./kivinsae_blog
+
+      - name: Configure OSS
+        run: |
+          touch ~/.ossutilconfig
+          chmod 644 ~/.ossutilconfig
+          cat >>~/.ossutilconfig <<END
+          [Credentials]
+          language=EN
+          endpoint=oss-accelerate.aliyuncs.com
+          accessKeyID=$OSSID
+          accessKeySecret=$OSSSECRET
+          END
+        env:
+          OSSID: ${{ secrets.ALIYUN_KEYID }}
+          OSSSECRET: ${{ secrets.ALIYUN_KEYTOKEN }}
+
+      - name: Upload artifacts to OSS
+        run: ossutil64 sync ./kivinsae_blog/public/ oss://kivinsae-blog-web/ --delete --force
+
