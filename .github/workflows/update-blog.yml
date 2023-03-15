@@ -59,6 +59,7 @@ jobs:
       
       - name: Generate the Blog content
         run: |
+          ls -lah
           /usr/local/lib/node_modules/hexo-cli/bin/hexo clean
           /usr/local/lib/node_modules/hexo-cli/bin/hexo generate
         working-directory: ./kivinsae_blog
