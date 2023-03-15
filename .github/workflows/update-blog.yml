@@ -57,8 +57,8 @@ jobs:
       - name: Generate the Blog content
         run: |
           npm install
-          hexo clean
-          hexo generate
+          ./node_modules/hexo/bin/hexo clean
+          ./node_modules/hexo/bin/hexo generate
         working-directory: ./kivinsae_blog
 
       - name: Configure OSS
