@@ -53,13 +53,10 @@ jobs:
           curl -fsSL https://deb.nodesource.com/setup_19.x | sudo -E bash - &&\
           sudo apt-get install -y nodejs
           sudo -v ; curl https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
-
-      - name: Install Hexo
-        run: npm install -g hexo-cli
       
       - name: Generate the Blog content
         run: |
-          ls -lah
+          npm install
           /usr/local/lib/node_modules/hexo-cli/bin/hexo clean
           /usr/local/lib/node_modules/hexo-cli/bin/hexo generate
         working-directory: ./kivinsae_blog
