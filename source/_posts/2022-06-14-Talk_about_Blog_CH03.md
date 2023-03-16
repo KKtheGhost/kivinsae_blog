@@ -111,7 +111,6 @@ $~ sudo certbot renew --dry-run
 name: Publish Blog
 on: [push, pull_request]
 jobs:
-
   build:
     name: "Publish My Blog"
     runs-on: ubuntu-latest
@@ -137,13 +136,61 @@ jobs:
           SSH_KEY: ${{ secrets.KIVINSAE_BLOG_RSAKEY }}
           SSH_HOST: ${{ secrets.KIVINSAE_BLOG_HOST }}
 
-      - name: Make the public_sync script could be executed.
-        run: ssh kivinsae-blog 'chmod +x /opt/hexo/public_sync.sh'
+      - name: Clone the master branch of kivinsae-blog
+        run: git clone git@github.com:KKtheGhost/kivinsae_blog.git --config core.sshCommand="ssh -i ~/.ssh/kivinsae.key"
 
-      - name: Executing remote ssh commands to republish blog
-        run: ssh kivinsae-blog '/usr/local/bin/public_sync'
+      - name: Generate the config.yml from templates
+        run: |
+          cp -rf _config.module.yml _config.yml
+          cp -rf node_modules/hexo-theme-landscape/_config.module.yml node_modules/hexo-theme-landscape/_config.yml
+        working-directory: ./kivinsae_blog
+
+      - name: Replace the SECRETS in config.yml
+        run: |
+          sed -i "s/TAG_ENCRYPT_PSWD/$ENCRYPT_PSWD/g" _config.yml
+          sed -i "s/TAG_PRIVATE_PSWD/$PRIVATE_PSWD/g" _config.yml
+          sed -i "s/LEANCLOUD_APPID/$LC_APPID/g" node_modules/hexo-theme-landscape/_config.yml
+          sed -i "s/LEANCLOUD_APPKEY/$LC_APPKEY/g" node_modules/hexo-theme-landscape/_config.yml
+        working-directory: ./kivinsae_blog
+        env:
+          ENCRYPT_PSWD: ${{ secrets.BLOG_ENCRYPT }}
+          PRIVATE_PSWD: ${{ secrets.BLOG_PRIVATE }}
+          LC_APPID: ${{ secrets.LEANCLOUD_APPID }}
+          LC_APPKEY: ${{ secrets.LEANCLOUD_APPKEY }}
+
+      - name: Install NPM and OSSUTIL
+        run: |
+          curl -fsSL https://deb.nodesource.com/setup_19.x | sudo -E bash - &&\
+          sudo apt-get install -y nodejs
+          sudo -v ; curl https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
+      
+      - name: Generate the Blog content
+        run: |
+          npm install
+          ./node_modules/hexo/bin/hexo clean
+          ./node_modules/hexo/bin/hexo generate
+        working-directory: ./kivinsae_blog
+
+      - name: Configure OSS
+        run: |
+          touch ~/.ossutilconfig
+          chmod 644 ~/.ossutilconfig
+          cat >>~/.ossutilconfig <<END
+          [Credentials]
+          language=EN
+          endpoint=oss-accelerate.aliyuncs.com
+          accessKeyID=$OSSID
+          accessKeySecret=$OSSSECRET
+          END
+        env:
+          OSSID: ${{ secrets.ALIYUN_KEYID }}
+          OSSSECRET: ${{ secrets.ALIYUN_KEYTOKEN }}
+
+      - name: Upload artifacts to OSS
+        run: ossutil64 sync ./kivinsae_blog/public/ oss://kivinsae-blog-web/ --delete --force
+
 ```
-实质上，这个工作流一共只有一个`step`，三个任务。分别是：
+实质上，这个工作流一共只有一个`step`，三个主要任务。分别是：
 - 初始化容器，配置容器的`ssh rsa私钥`和`.ssh`目录权限，配置目标服务器信息。
 - 确保远程服务器上的更新脚本拥有可执行权限。
 - 远程执行服务器上的自动更新、清理、`Hexo`生成脚本。

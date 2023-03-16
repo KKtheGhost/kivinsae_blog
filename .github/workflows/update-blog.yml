@@ -78,4 +78,3 @@ jobs:
 
       - name: Upload artifacts to OSS
         run: ossutil64 sync ./kivinsae_blog/public/ oss://kivinsae-blog-web/ --delete --force
-
