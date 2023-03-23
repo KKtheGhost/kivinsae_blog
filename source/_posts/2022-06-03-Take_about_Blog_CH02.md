@@ -2,12 +2,12 @@
 title: 聊聊个人博客这件事（二）
 date: 2022-06-03 23:08:00
 categories:
-- 博客搭建和优化
+- blog_ops
 tags:
-- CHN
-- 随想
-- 技术
-- 博客
+- lang_chinese
+- thinking
+- technology
+- blog
 ---
 继续上一篇[聊聊个人博客这件事（一）](https://www.kivinsae.com/2022/06/01/2022-06-01-Take_about_Blog_CH01)所说的故事，来聊聊博客的框架。目前市面上主流的免费开源博客框架非常多，但是好用且插件丰富的其实并不多。个人能力和篇幅的限制，今天主要还是聊聊三个我自己折腾过的框架：
 - [WordPress](https://wordpress.com/zh-cn/)

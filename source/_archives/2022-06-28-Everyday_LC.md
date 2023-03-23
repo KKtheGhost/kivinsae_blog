@@ -2,10 +2,10 @@
 title: LeetCode Daily Challenge 2022-06-28 (No. 1647)
 date: 2022-06-28 12:30:00
 categories:
-- [LeetCode,Daily Challenge]
+- [leecode,Daily Challenge]
 tags: 
-- ENG
-- LeetCode
+- lang_english
+- leetcode
 - C
 ---
 Today's Daily Challenge is **[1647. Minimum Deletions to Make Character Frequencies Unique](https://leetcode.com/problems/minimum-deletions-to-make-character-frequencies-unique/description/)** <font color=Orange><b>MEDIUM</b></font>. This question is a little bit tricky. The **KEY** idea would be `reversed qsort()`.

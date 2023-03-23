@@ -2,11 +2,11 @@
 title: Hexo Blog plugins test field
 date: 2018-07-23 00:00:00
 tags: 
-- ENG
-- Test
-- 博客
-- Hexo
-- Plugins
+- lang_english
+- test
+- blog
+- heco
+- plugins
 ---
 本文主要对站点内额外安装的一些页面效果类和`widget`类插件进行测试和呈现效果验证使用。
 

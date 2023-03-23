@@ -2,11 +2,11 @@
 title: LeetCode 括号问题详解
 date: 2022-06-17 18:45:22
 categories:
-- [LeetCode,LeetCode思路详解（C）]
+- [leecode,leetcode_clang]
 tags: 
-- CHN
-- 编程
-- LeetCode
+- lang_chinese
+- programming
+- leetcode
 - C
 ---
 如果经常刷`LeetCode`的话，其实应该会对有一道题目印象非常深刻。那就是括号问题 **[[20] Valid Parentheses](https://leetcode.com/problems/valid-parentheses/description/)** 。第一次看到这道题的话多少都会楞一下，因为乍一看题目内容非常的简单，无非是判断括号闭合的合法与否，但是仔细想想其实也有不少坑。尽管这道题是`LeetCode`中序号最小的堆栈问题，但是第一次做不一定能反应过来是堆栈。

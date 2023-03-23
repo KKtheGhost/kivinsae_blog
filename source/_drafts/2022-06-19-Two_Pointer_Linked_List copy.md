@@ -1,11 +1,11 @@
 ---
 title: LeetCode 双指针链表类问题详解
 categories:
-- [LeetCode,LeetCode思路详解（C）]
+- [leecode,leetcode_clang]
 tags: 
-- CHN
-- 编程
-- LeetCode
+- lang_chinese
+- programming
+- leetcode
 - C
 ---
 -	19. Remove Nth Node From End of List🟠

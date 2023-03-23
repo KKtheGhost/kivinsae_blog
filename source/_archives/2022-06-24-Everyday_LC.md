@@ -2,10 +2,10 @@
 title: LeetCode Daily Challenge 2022-06-24 (No. 1354)
 date: 2022-06-24 23:30:00
 categories:
-- [LeetCode,Daily Challenge]
+- [leecode,Daily Challenge]
 tags: 
-- ENG
-- LeetCode
+- lang_english
+- leetcode
 - C
 ---
 Today's Daily Challenge is **[1354. Construct Target Array With Multiple Sums](https://leetcode.com/problems/construct-target-array-with-multiple-sums/)** <font color=Red><b>HARD</b></font>. The most simple way to solve today's challenge would be qsort(). While only **one simple element** is changed in every loop, it's cost would be significantly reduced.

@@ -2,10 +2,10 @@
 title: A Simple explanation about 312.Burst Balloons
 date: 2022-01-01 02:10:22
 tags: 
-- ENG
-- 编程
-- LeetCode
-- Go
+- lang_english
+- programming
+- leetcode
+- golang
 ---
 As the first daily LeetCode problem in 2022, [burst ballons](https://leetcode.com/problems/burst-balloons/) acted like a true challange for most of people. So the question is, where did the difficulties come from. In this blog, I will briefly explain it.
 

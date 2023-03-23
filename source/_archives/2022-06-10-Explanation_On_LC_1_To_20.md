@@ -2,11 +2,11 @@
 title: LeetCode Q1-20 思路详解 (持续更新中)
 date: 2022-06-10 23:30:22
 categories:
-- [LeetCode,LeetCode思路详解（C）]
+- [leecode,leetcode_clang]
 tags: 
-- CHN
-- 编程
-- LeetCode
+- lang_chinese
+- programming
+- leetcode
 - C
 ---
 最近又开始了第 `?` 轮的`LeetCode`刷刷刷。怎么说呢，LC这个东西你说它功利，那肯定是绝对功利的。如果说这个世界上有什么东西的学习收益比英语还高的话，可能也就是只有LC了。尽管对于ACM狂人和算法猛汉来说，刷LC其实只是纯粹的休闲娱乐活动，就俗称**益智游戏**，可对于绝大多数的一般从业者来说，如果在LC能很稳定的Pass绝大多数的`EASY`和`MEDIUM`，以及部分`HARD`的话，已经足够让你够一下`FLAG`的门槛了。如果成为周赛弄潮儿，那Offer真的就是拒不过来里。

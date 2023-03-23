@@ -2,10 +2,10 @@
 title: LeetCode Daily Challenge 2022-06-27 (No. 1689)
 date: 2022-06-27 11:30:00
 categories:
-- [LeetCode,Daily Challenge]
+- [leecode,Daily Challenge]
 tags: 
-- ENG
-- LeetCode
+- lang_english
+- leetcode
 - C
 ---
 Today's Daily Challenge is **[1689. Partitioning Into Minimum Number Of Deci-Binary Numbers](https://leetcode.com/problems/partitioning-into-minimum-number-of-deci-binary-numbers/description/)** <font color=Orange><b>MEDIUM</b></font>. This question is pretty easy. To be honest, it's just a logical test.

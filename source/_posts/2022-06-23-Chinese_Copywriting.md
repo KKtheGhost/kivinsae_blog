@@ -2,9 +2,9 @@
 title: 聊聊排版和『盘古之白』
 date: 2022-06-23 22:01:00
 tags: 
-- CHN
-- 编程
-- 随想
+- lang_chinese
+- programming
+- thinking
 ---
 **[知识的诅咒 (Curse of knowledge)](https://zh.wikipedia.org/zh-hans/%E7%9F%A5%E8%AD%98%E7%9A%84%E8%A9%9B%E5%92%92)**，我和不止一位同事或朋友料到过这个词。通俗的解释是：
 <div align="center">

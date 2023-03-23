@@ -2,10 +2,10 @@
 title: Switch atmosphere 大气层 9.2.0 升级 10.0.2 踩坑详解
 date: 2018-07-23 16:56:41
 categories:
-- [硬件相关,Switch]
+- [hardware,switch]
 tags: 
-- CHN
-- Nintendo Switch
+- lang_chinese
+- nintendo_switch
 ---
 ![授权转载](https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/harukoNX-fs8.png)
 <font color=Red><b>特别提醒：本人反对任何形式通过破解 Switch 侵害游戏公司利益的行为</b></font>

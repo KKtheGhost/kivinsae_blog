@@ -2,10 +2,10 @@
 title: LeetCode Daily Challenge 2022-06-25 (No. 665)
 date: 2022-06-25 12:30:00
 categories:
-- [LeetCode,Daily Challenge]
+- [leecode,Daily Challenge]
 tags: 
-- ENG
-- LeetCode
+- lang_english
+- leetcode
 - C
 ---
 Today's Daily Challenge is **[665. Non-decreasing Array](https://leetcode.com/problems/non-decreasing-array/)** <font color=Orange><b>MEDIUM</b></font>. This question is pretty easy but we should be very careful about the edge conditions.

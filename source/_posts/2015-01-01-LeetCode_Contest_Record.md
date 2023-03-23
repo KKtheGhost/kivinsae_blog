@@ -2,10 +2,10 @@
 title: LeetCode Contest Records
 date: 2015-01-01 00:01:00
 categories:
-- LeetCode
+- leetcode
 tags: 
-- ENG
-- LeetCode
+- lang_english
+- leetcode
 ---
 ### **Why the date of this post is 2015?**
 Because LeetCode was founded in the heart of Silicon Valley in 2015.

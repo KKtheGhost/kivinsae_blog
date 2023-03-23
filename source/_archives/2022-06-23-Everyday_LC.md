@@ -2,10 +2,10 @@
 title: LeetCode Daily Challenge 2022-06-23 (No. 630)
 date: 2022-06-23 14:01:00
 categories:
-- [LeetCode,Daily Challenge]
+- [leecode,Daily Challenge]
 tags: 
-- ENG
-- LeetCode
+- lang_english
+- leetcode
 - C
 ---
 Today's Daily Challenge is **[630. Course Schedule III](https://leetcode.com/problems/course-schedule-iii/)** <font color=Red><b>HARD</b></font>. A question could be solved by tons of algorism methods, and I'll choose interative method to solve it.

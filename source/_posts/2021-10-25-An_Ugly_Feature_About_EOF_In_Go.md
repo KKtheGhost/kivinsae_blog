@@ -2,10 +2,10 @@
 title: An ugly feature about io.EOF in Go
 date: 2021-10-25 00:17:40
 tags: 
-- ENG
-- 编程
-- Go Library
-- Go
+- lang_english
+- programming
+- go_lib
+- golang
 ---
 `io.EOF` seems to be a weird feature in Go. This article will explain **WHY**.
 

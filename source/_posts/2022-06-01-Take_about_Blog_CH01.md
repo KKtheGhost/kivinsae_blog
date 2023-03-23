@@ -2,12 +2,12 @@
 title: 聊聊个人博客这件事（一）
 date: 2022-06-01 15:22:00
 categories:
-- 博客搭建和优化
+- blog_ops
 tags:
-- CHN
-- 随想
-- 技术
-- 博客
+- lang_chinese
+- thinking
+- technology
+- blog
 ---
 今年这个夏天也算是比较正式的把自己的个人博客从 [medium.com](https://medium.com/@Kivinsae) 上迁移了下来。不是说`Medium`这样的`SaaS`博客不好，更多的是对`MarkDown编辑器`本身的执念以及`SaaS`天然的对版本管理的缺陷导致的。
 
