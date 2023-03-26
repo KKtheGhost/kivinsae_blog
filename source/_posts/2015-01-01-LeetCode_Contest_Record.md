@@ -2,7 +2,7 @@
 title: LeetCode Contest Records
 date: 2015-01-01 00:01:00
 categories:
-- leetcode
+- [leecode,contest]
 tags: 
 - lang_english
 - leetcode
