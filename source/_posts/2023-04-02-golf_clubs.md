@@ -90,8 +90,8 @@ Lie 指的是球杆的摆角，也就是球杆与地面之间的夹角。通常�
 常见的半套杆组里，往往带了一根 P 杆或者 S 杆。
 
 <div align="left">    
-  <img src="https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/2023-04-02-wedge.png" height = "300" alt="" align=center />
-  <img src="https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/2023-04-02-w-angle.png" height = "300" alt="" align=center />
+  <img src="https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/2023-04-02-wedge.png" width = "300" alt="" align=center />
+  <img src="https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/2023-04-02-w-angle.png" width = "300" alt="" align=center />
 </div>
 <br>
 
