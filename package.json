@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "hexo": "^6.2.0",
-    "hexo-asset-image": "0.1.0",
+    "hexo-asset-images": "0.1.0",
     "hexo-bilibili-card": "^0.6.0",
     "hexo-blog-encrypt": "^3.1.6",
     "hexo-generator-archive": "^2.0.0",
