@@ -9,7 +9,7 @@ tags:
 
 ## **[德龙 Icona Vintage ECOV 310.GR 泵压式咖啡机](https://www.delonghi.com/zh-cn/products/coffee/coffee-makers/pump-espresso/icona-vintage-ecov-310gr---0132106075)**
 
-![Icona Vintage ECOV 310.GR](https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/Coffee_Machine.jpg)
+![Icona Vintage ECOV 310.GR](./2022-06-10-Good_Gifts/Coffee_Machine.png)
 
 这款其实算是德龙最入门款的泵压式咖啡机。
 
@@ -26,7 +26,7 @@ tags:
 
 至于具体的香氛前中后调评测，我选择跳过。首先是网络上有一堆，其次香氛评价真的非常主观，不存在参考意义。单说我了解的，有相当大比例的人，厌恶木质香。所以，没啥可说的，青菜萝卜各有所爱，不如直接进行看图。
 
-![Orphéon Eau de Parfum & Dzongkha Eau de Toilette](https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/Perfume.jpg)
+![Orphéon Eau de Parfum & Dzongkha Eau de Toilette](./2022-06-10-Good_Gifts/Perfume.png)
 
 ---
 *2022-06-10 深夜*

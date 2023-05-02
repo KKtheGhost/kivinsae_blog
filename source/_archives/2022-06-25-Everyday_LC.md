@@ -40,8 +40,6 @@ So the cases in **Exp1** could be written in this way:
 - [ . . .  2<sup><b>↑</b></sup><sub><b>↑</b></sub>, 3<sup><b>↑</b></sup><sub><b>↓</b></sub>, 3<sup><b>↓</b></sup><sub><b>↓</b></sub>, 2<sup><b>↑</b></sup>, 2, . . . ]
 
 **Now we could abstract the prototype of this edge conditon:**
-![](
-https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/20220625-LC-fs8.png)
 - [ . . .  N<sub><b>i</b></sub><sup><b>↑</b></sup><sub><b>↓</b></sub>, N<sub><b>i+1</b></sub><sup><b>↓</b></sup><sub><b>↓</b></sub>, N<sub><b>i+2</b></sub><sup><b>↑</b></sup>, N<sub><b>i+3</b></sub>, . . . ]
 
 With the prototype, we could turn it into code easily:

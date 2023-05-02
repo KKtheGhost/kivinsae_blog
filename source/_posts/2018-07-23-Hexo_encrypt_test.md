@@ -9,4 +9,4 @@ tags:
 - encrypt
 ---
 ## 如你所见，这是一张`NSFW`的色图
-![image info](https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/98721335.png)
+![image info](./2018-07-23-Hexo_encrypt_test/pink_pls2.png)

@@ -38,8 +38,8 @@ tags:
 一般来说，常规的业余玩家的全套杆里，也就是 3 木 9 铁套里面，木杆主要就是 `#1`，`#3`，`#5` 这三根。
 
 <div align="left">    
-  <img src="https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/2023-04-02-driver.png" width = "300" alt="" align=center />
-  <img src="https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/2023-04-02-fairwaywood.png" width = "300" alt="" align=center />
+  <img src="./2023-04-02-golf_clubs/2023-04-02-driver.png" width = "300" alt="" align=center />
+  <img src="./2023-04-02-golf_clubs/2023-04-02-fairwaywood.png" width = "300" alt="" align=center />
 </div>
 <br>
 
@@ -53,7 +53,7 @@ tags:
 这么讲其实也印证了 Hydrid 算是高手球杆这件事。
 
 <div align="left">    
-  <img src="https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/2023-04-02-hydrid.png" width = "300" alt="" align=center />
+  <img src="./2023-04-02-golf_clubs/2023-04-02-hydrid.png" width = "300" alt="" align=center />
 </div>
 <br>
 
@@ -61,7 +61,7 @@ tags:
 铁杆是高尔夫球杆中最核心的一组球杆。一般来说，铁杆分为 1-9 号，其中 1-4 号是长铁杆，5-9 号是短铁杆。
 
 <div align="left">    
-  <img src="https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/2023-04-02-iron.png" width = "300" alt="" align=center />
+  <img src="./2023-04-02-golf_clubs/2023-04-02-iron.png" width = "300" alt="" align=center />
 </div>
 <br>
 
@@ -90,8 +90,8 @@ Lie 指的是球杆的摆角，也就是球杆与地面之间的夹角。通常�
 常见的半套杆组里，往往带了一根 P 杆或者 S 杆。
 
 <div align="left">    
-  <img src="https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/2023-04-02-wedge.png" width = "300" alt="" align=center />
-  <img src="https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/2023-04-02-w-angle.png" width = "300" alt="" align=center />
+  <img src="./2023-04-02-golf_clubs/2023-04-02-wedge.png" width = "300" alt="" align=center />
+  <img src="./2023-04-02-golf_clubs/2023-04-02-w-angle.png" width = "300" alt="" align=center />
 </div>
 <br>
 
@@ -108,7 +108,7 @@ Lie 指的是球杆的摆角，也就是球杆与地面之间的夹角。通常�
 如果说下场打的时候有哪根杆是**绝对必不可少**的话，那只能是推杆。所有市售的半套杆和套杆，一定带了一根推杆。
 
 <div align="left">    
-  <img src="https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/2023-04-02-putter.png" width = "300" alt="" align=center />
+  <img src="./2023-04-02-golf_clubs/2023-04-02-putter.png" width = "300" alt="" align=center />
 </div>
 <br>
 

@@ -131,8 +131,8 @@ encrypt: # hexo-blog-encrypt
   abstract: 本文已经被加密，请和博主申请访问权限.
   message: 请在此处输入密码.
   tags:
-  - {name: ENCRYPT, password: TAG_ENCRYPT_PSWD}
-  - {name: PRIVATE, password: TAG_PRIVATE_PSWD}
+  - {name: encrypt, password: TAG_ENCRYPT_PSWD}
+  - {name: private, password: TAG_PRIVATE_PSWD}
   wrong_pass_message: 抱歉，密码错误, 请再试试.
   wrong_hash_message: 抱歉, 本文内容校验失败, 但是仍将为您呈现解析后结果.
 

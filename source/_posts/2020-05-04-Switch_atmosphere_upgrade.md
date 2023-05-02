@@ -7,7 +7,7 @@ tags:
 - lang_chinese
 - nintendo_switch
 ---
-![授权转载](https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/harukoNX-fs8.png)
+![授权转载](./2020-05-04-Switch_atmosphere_upgrade/harukoNX-fs8.png)
 <font color=Red><b>特别提醒：本人反对任何形式通过破解 Switch 侵害游戏公司利益的行为</b></font>
 
 ## **阅前须知**
