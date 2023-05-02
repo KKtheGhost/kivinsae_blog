@@ -2,7 +2,7 @@
 
 npm install
 
-git pull --force
+git pull origin master --force
 
 cp -rf _config.module.yml _config.yml
 cp -rf node_modules/hexo-theme-landscape/_config.module.yml node_modules/hexo-theme-landscape/_config.yml
