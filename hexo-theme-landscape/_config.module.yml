@@ -6,7 +6,7 @@ menu:
   Archives: /archives
   About: /about
 rss: /atom.xml
-banner: "https://kivinsae-blog.oss-accelerate.aliyuncs.com/blog_images/banner.png"
+banner: "images/banner.jpg"
 
 # Content
 excerpt_link: Read More
