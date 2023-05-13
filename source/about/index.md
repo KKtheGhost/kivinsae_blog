@@ -1,20 +1,19 @@
 ---
-title: 关于我 - 𝑲𝒊𝒗𝒊𝒏𝒔𝒂𝒆 𝑭𝒂𝒏𝒈
+title: Who Am I - 𝑲𝒊𝒗𝒊𝒏𝒔𝒂𝒆 𝑭𝒂𝒏𝒈
 date: 2022-06-02 13:41:23
 ---
-## <b>我是谁</b>
+## <b>My Bio</b>
 
-- 一个在外企打工的底层运维工程师，住在魔都。
-- 目前为止的职业生涯都在游戏行业度过，不过也许未来有机会的话希望可以在更多计算机相关领域工作。因为从个人的观点来看，运维工程师更像是一个泛用型工种。有数字化需求和高可用服务建设需求的领域，都有发挥热量的余地。
-- 已婚，养着两只咪咪。一只布偶，一只英短。
-- 大概英语还可以，裸考雅思口语 8.5 这样。日语属于纯哑巴级别，听读可以，开口暴毙。吴语算是同龄人里讲得最好的那批，单纯因为 4 岁前不会普通话。
-- 曾经喜欢键政，现在看到会直接 Ban。因为这玩意儿真的会死人。
-- 是一个过度自信的人，ENTJ-A 的缘故大概是。所以也没太多朋友，换句话说只是靠脸皮厚活到了现在。
-- 算是一个守口如瓶的人，但是根因其实是健忘。
-- 日常主要写 Python，C，Ruby。脚本最近 Powershell 写的多，Bash 以前写的比较多。
-- Go 写过一段时间，最近没在写了。捡起来应该不难。
-- 容器化是好文明，IaC 也是好文明。但是 HCL 和 Yaml 真的不优美。但是作为使用者，确实也想不出什么更好的替代方案。
-- 最喜欢的游戏是 怪物猎人系列 和 智龙迷城。只有这两个游戏系列我没有中断玩了超过 10 年。
+- I work as an Infrastructure engineer in a foreign company and I live in Shanghai.
+- So far, I have spent my entire career in the gaming industry, but I hope to work in other computer-related fields in the future, if the opportunity arises. From my personal point of view, DevOps/Infra engineers are more like a versatile type of engineer. There is room to excel in fields that require digitization and high availability service construction.
+- I am married and have two cats - a ragdoll and a British shorthair.
+- I have a good command of English, with a score of 8.5 in the IELTS speaking test. My Japanese, on the other hand, is at a pure beginner level - I can understand it when reading or listening, but I struggle to speak it. Among my peers, I speak the best Wu dialect because I didn't learn Mandarin until I was 4 years old.
+- I used to be interested in politics, but now I would ban such topics immediately. It's a dangerous game that can lead to real harm.
+- I am an overly confident person, perhaps due to my ENTJ-A personality type. As a result, I don't have many friends - to put it another way, I've only made it this far by being thick-skinned.
+- I am generally tight-lipped, but the root cause is actually forgetfulness.
+- I primarily write Python, C, and Ruby in my daily work, with a recent focus on Powershell scripting and previous experience with Bash. I dabbled in Go for a while, but I haven't been using it recently. However, I could easily pick it up again.
+- Containerization and Infrastructure as Code are great advances, but HCL and Yaml are not aesthetically pleasing. However, as a user, I can't think of any better alternatives.
+- My favorite game series are *Monster Hunter* and *Puzzle & Dragons*. These are the only two game series that I have played continuously for more than 10 years.
 
 <table width="800px">
 <tr valign="top" width="100%">
@@ -34,10 +33,8 @@ date: 2022-06-02 13:41:23
 #### <b>[ヒューマンアカデミー日本語学校](https://hajl.athuman.com/)/Student/Tokyo</b><div align="left">2017.06 - 2018.07</dov>
 - Japanese
 
-#### <b>[ダイコクドラッグ](https://daikokudrug.com/)/店内スタッフ/Tokyo</b><div align="left">2017.11 - 2018.05</dov>
-- 品切管理
-- 推売システム
-- チラシ配り
+#### <b>[ダイコクドラッグ](https://daikokudrug.com/)/Staff/Tokyo</b><div align="left">2017.11 - 2018.05</dov>
+- Part time job
 
 #### <b>[X.D NetWork](https://www.xd.com/)/DevOps Engineer/Shanghai</b><div align="left">2018.07 - 2022.05</dov>
 - Work as the DevOps leader in Project `T3 Arena`
