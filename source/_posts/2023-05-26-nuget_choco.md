@@ -49,12 +49,12 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
 ```
 请注意，上面这条安装命令可能因版本的迭代而发生变化，请以官方文档为准。Chocolatey 官方的安装文档请参考 [Chocolatey Installation](https://chocolatey.org/install) 。
 
-#### **安装 donet SDK 3.1 和 netapp 2.2**
-请注意，这里并不是固定的版本，只是在今天的案例里， `*.csproj` 调用的 `<TargetFramework>` 是 `netapp 2.2`。
+#### **安装 .Net SDK 和 .Net Core**
+请注意，这里并不是固定的版本，只是在今天的案例里， `*.csproj` 调用的 `<TargetFramework>` 是 `netcoreapp 2.2`。
 
 访问 [Download .NET Core 3.1](https://dotnet.microsoft.com/en-us/download/dotnet/3.1)，下载并安装对应的 Dotnet SDK 3.1 安装包。
 
-使用 Chocolatey 安装 dotnet core app 2.2
+使用 Chocolatey 安装 dotnet Core 2.2
 ```powershell
 choco install dotnetcore --version=2.2.8
 ```
