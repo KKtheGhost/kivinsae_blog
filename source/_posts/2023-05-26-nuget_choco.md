@@ -272,6 +272,8 @@ vs_setup.exe
 
 之后将这些文件移动到 `vs\myproject` 目录下，通过 `*.nuspec` 的 `<file>` 挂载，在安装的时候就可以直接被刚才写好的 `chocolateyinstall.ps1` 调用了。
 
+**需要额外注意的是**，我们可以在 `Response.json` 中定义我们希望安装的 Visual Studio 组件，这对于自动化和自定义安装非常有帮助。
+
 ## 打包 NuPKG 并上传到 NuGet 源
 
 正如上面所说，我们有两种打包 NuPKG 的方法：
