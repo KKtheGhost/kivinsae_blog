@@ -2,13 +2,14 @@
 title: NuGet 应用实践：手搓 Vitual Studio Choco 安装包
 date: 2023-05-26 23:20:00
 categories:
-- [software,security]
+- [software]
 tags:
 - lang_chinese
 - windows
 - dotnet
 - chocolatey
 ---
+
 ## 引言
 
 大家用过 Chocolatey 吗？我相信答案一定是 Yes，因为它是 Windows 下最好用的包管理工具，恩，大概率没有之一。
