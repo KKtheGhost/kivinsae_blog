@@ -128,7 +128,6 @@ C:.
   <files>
     <file src="tools\**" target="tools" />
     <file src="vs\myproject\**" target="tools\vs" />
-    <!--Building from Linux? You may need this instead: <file src="tools/**" target="tools" />-->
   </files>
 </package>
 ```
@@ -147,9 +146,7 @@ C:.
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <NuspecFile>./vs2019-myproject.nuspec</NuspecFile>
     <Version>16.11.26</Version>
-    <!-- NU5111: dotnet pack doesn't recognize the chocolateinstall powershell files so complains. We can safely ignore this warning -->
     <NoWarn>NU5111</NoWarn> 
-    <!-- Allow dotnet pack to pass in the version from the cli to the nuspec token replacement system -->
     <NuspecProperties>version=$(Version)</NuspecProperties> 
     <NoBuild>true</NoBuild>
     <NoDefaultExcludes>true</NoDefaultExcludes>
