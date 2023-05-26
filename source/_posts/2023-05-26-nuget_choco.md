@@ -10,6 +10,8 @@ tags:
 - chocolatey
 ---
 
+"微软的文档，真的太棒啦"
+
 ## 引言
 
 大家用过 Chocolatey 吗？我相信答案一定是 Yes，因为它是 Windows 下最好用的包管理工具，恩，大概率没有之一。
