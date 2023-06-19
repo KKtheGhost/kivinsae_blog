@@ -1,0 +1,126 @@
+@font-face {
+  font-family: 'Noto Serif CJK';
+  src: url('../fonts/NotoSerifCJK-Regular.ttc') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+header {
+  background-color: black;
+  color: pink;
+  padding: 10px;
+}
+
+nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  text-align: right;
+}
+
+nav li {
+  display: inline-block;
+  margin-left: 20px;
+}
+
+nav li:first-child {
+  margin-left: 0;
+}
+
+nav a {
+  color: pink;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+nav a:hover {
+  color: white;
+}
+
+body {
+  font-family: 'Noto Serif CJK', sans-serif;
+  background-color: black;
+  color: #dcdcdc;
+  font-size: 14px;
+  max-width: 800px;
+  margin: 0 auto; /* add this line to center the content */
+}
+
+.footer {
+  bottom: 0;
+  width: 100%;
+  height: 50px;
+}
+
+a {
+  color: #ff69b4;
+}
+
+h1 {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 14px;
+  line-height: 1.2;
+}
+
+h3 {
+  font-size: 19px;
+  font-weight: bold;
+  margin-bottom: 11px;
+  line-height: 1.2;
+}
+
+h1 code, h2 code, h3 code, h4 code, h5 code, h6 code {
+  font-size: 1em;
+}
+
+code {
+  white-space: pre-wrap;
+  color: #f8f8f8; /* change code block font color to light gray */
+}
+
+pre {
+  white-space: pre-wrap;
+  padding: 10px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  overflow-x: auto;
+  text-indent: 0;
+}
+
+/* WebKit scrollbar styles */
+pre::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+pre::-webkit-scrollbar-thumb {
+  background-color: #999;
+  border-radius: 3px;
+}
+
+pre code {
+  font-size: 14px;
+  color: #f8f8f8;
+}
+
+li {
+  line-height: 1.3; /* add this line to increase the line-height of list items */
+}
+
+/* Responsive media queries for small screens */
+@media (max-width: 600px) {
+  body {
+    font-size: 12px;
+    max-width: 100%;
+    padding: 0 10px;
+  }
+}

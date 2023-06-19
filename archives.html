@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <nav>
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../archives.html">Archives</a></li>
+        <li><a href="../categories.html">Categories</a></li>
+        <li><a href="../friends.html">Friends</a></li>
+        <li><a href="../about.html">About</a></li>
+      </ul>
+    </nav>
+    <meta charset="UTF-8">
+    <title>Kivinsae's Nest</title>
+    <link rel="stylesheet" href="styles/style.css">
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Archives</h1>
+      </div>
+      <div>
+        <p>All my posts and blogs are listed here.</p>
+      </div>
+      <hr>
+      <ul id="recent-posts-list"></ul>
+      <script>
+        fetch("./posts/")
+          .then(response => response.text())
+          .then(data => {
+            var parser = new DOMParser();
+            var htmlDoc = parser.parseFromString(data, "text/html");
+            var fileNames = Array.from(htmlDoc.querySelectorAll("a"))
+              .map(a => a.getAttribute("href"))
+              .filter(href => href.endsWith(".html"));
+            var sortedFileNames = fileNames.sort().reverse();
+            var recentPosts = sortedFileNames.slice(0, 9999);
+            var recentPostsList = document.getElementById("recent-posts-list");
+            for (var i = 0; i < recentPosts.length; i++) {
+              var fileName = recentPosts[i];
+              var postTitle = "";
+              fetch(fileName)
+                .then(response => response.text())
+                .then(data => {
+                  var parser = new DOMParser();
+                  var htmlDoc = parser.parseFromString(data, "text/html");
+                  postTitle = htmlDoc.querySelector("title").textContent;
+                  var listItem = document.createElement("li");
+                  var link = document.createElement("a");
+                  link.href = fileName;
+                  link.textContent = postTitle;
+                  listItem.appendChild(link);
+                  recentPostsList.appendChild(listItem);
+                });
+            }
+          });
+      </script>
+      <br>
+      <br>
+      <div class="footer">
+        <p><a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC 4.0</a>
+          <br>
+          &copy; 1995-<script type="text/javascript">document.write((new Date()).getFullYear());</script>
+          Kivinsae Fang
+          <br>
+          Powered by Raw HTML
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
+

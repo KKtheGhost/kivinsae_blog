@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <nav>
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../archives.html">Archives</a></li>
+        <li><a href="../categories.html">Categories</a></li>
+        <li><a href="../friends.html">Friends</a></li>
+        <li><a href="../about.html">About</a></li>
+      </ul>
+    </nav>
+    <meta charset="UTF-8">
+    <title>TCC 数据库：开发者的噩梦，攻击者的狂欢</title>
+    <link rel="stylesheet" href="../styles/style.css">
+    <link rel="stylesheet" href="../styles/prism-tomorrow.css">
+  </head>
+  <body>
+    <script src="../styles/prism-tomorrow.js"></script>
+    <div class="container">
+      <div class="header">
+        <h1>TCC 数据库：开发者的噩梦，攻击者的狂欢</h1>
+      </div>
+      <div class="post">
+        <!-- Post Content Starts Here -->
+        <font Color="Orange"><b>苹果，我完全无法理解你</b></font>
+
+        <h2 id="-"><strong>前言</strong></h2>
+        <p>最近几周，我花了不少时间在 macOS 的自动化流程以及 MDM (Mobile Device Management) 的开发上。</p>
+        <p>事实上我一直以来都难以理解为什么有那么多企业选择使用 macOS 作为员工的工作电脑。</p>
+        <p>姑且可以认为多数的科技公司从业者都具备一些必要的计算机常识和命令行技能，但是 macOS 本身其实是基于 XNU 内核构建的 Darwin ，而 Darwin 本身又包含了大量来自 BSD 的特性，这些特性意味着用户在深入使用的时候，往往不得不面对一些在 BSD 和 Linux 中同名同姓却完全不同的命令，例如 <code>mount</code>。</p>
+        <p>而更加好死不死的是，Apple 还额外贴心地从 macOS 10.11 开始加入了 <code>SIP (System Integrity Protection)</code>，也就是著名的<font Color="DarkOrchid"><b>苹果是你的爸爸</b></font>组件。</p>
+        <p>这意味着无论你是卑微的个人设备还是财大气粗的企业采购设备，都要面临你的 root 不是真正的 root 这样的糟糕体验。而更加搞笑的是，有时候 SIP 不但没有真正保护用户安全，还接二连三的爆出涉及 <code>TCC.db</code> 的各种权限漏洞，给黑客大开便捷之门。有时候真觉得 macOS 上开发工作流太噩梦了。</p>
+        <p>本篇我就稍微聊一聊 <code>TCC.db</code> 这个数据库。</p>
+        <h2 id="-tcc-transparency-consent-and-control-"><strong>TCC - Transparency, Consent, and Control</strong></h2>
+        <p><code>TCC.db</code> 是 macOS 10.9 之后引入的一个数据库，用于记录用户对于各种系统服务的授权情况。系统级 <code>TCC.db</code> 的完整路径是 <code>/Library/Application Support/com.apple.TCC/TCC.db</code>。而对于每一个单独的用户，其实还有一个 <code>TCC.db</code>，位于 <code>$HOME/Library/Application Support/com.apple.TCC/TCC.db</code>。</p>
+        <p>这个数据库的结构非常简单，只有 6 个表：</p>
+        <ul>
+        <li><code>access</code></li>
+        <li><code>active_policy</code></li>
+        <li><code>expired</code></li>
+        <li><code>access_overrides</code></li>
+        <li><code>admin</code></li>
+        <li><code>policies</code></li>
+        </ul>
+        <p>事实上这 6 个表里，在默认情况下有且只有 <code>access</code> 这一个表是有有效数据的。其他的表利用 sqlite3 查看的话可以发现都是空表，而 <code>admin</code> 表也仅有一行：</p>
+        <pre><code class="lang-shell">sqlite3 "./Library/Application Support/com.apple.TCC/TCC.db" "<span class="hljs-keyword">select</span> * <span class="hljs-keyword">from</span> access_overrides;"
+        sqlite3 "./Library/Application Support/com.apple.TCC/TCC.db" "<span class="hljs-keyword">select</span> * <span class="hljs-keyword">from</span> active_policy;"
+        sqlite3 "./Library/Application Support/com.apple.TCC/TCC.db" "<span class="hljs-keyword">select</span> * <span class="hljs-keyword">from</span> expired;"
+        sqlite3 "./Library/Application Support/com.apple.TCC/TCC.db" "<span class="hljs-keyword">select</span> * <span class="hljs-keyword">from</span> policies;"
+        sqlite3 "./Library/Application Support/com.apple.TCC/TCC.db" "<span class="hljs-keyword">select</span> * <span class="hljs-keyword">from</span> <span class="hljs-keyword">admin</span>;"
+        version|20
+        </code></pre>
+        <font color="DimGrey"><strong>PS</strong>: 无端推测，iOS 的权限实现大概率也是基于类似的机制。</font>
+        
+        <p>然而这一切对开发者友善的前提是，macOS 需要在 Darwin 的命令行支持或系统开发接口中，也复刻一套这样的授权机制。然而事实上是，macOS 没有做到这一点，也似乎并不打算做好这些支持。</p>
+        <p>稍微对 SIP 有所接触的人应该会很容易察觉到，苹果对于<b><i>用户可以在自己的机器上可以做什么</i></b>这件事情上，做了非常多的限制。在最近的几个版本的 macOS 中，对于所有系统相关的目录，无论用户本身是否是 Administrator，都仅能做只读操作；即便用户通过 <code>sudo su</code> 提权到 root，也无法对这些目录进行任何的写操作。</p>
+        <p>然而 macOS 就仿佛脑子神经搭错了一样，把 <code>TCC.db</code> 放在了一个普通用户可以进行读写的位置。这就留下隐患了。</p>
+        <p>当然，macOS 在正常情况下对 <code>TCC.db</code> 还是进行了许多的保护，但是在过去的几年中，这些保护可以被二十多种方法<sup><a href="https://www.slideshare.net/CsabaFitzl/20-ways-to-bypass-your-mac-os-privacy-mechanisms">[1]</a></sup>绕过，TCC 提权漏洞在几乎每一个版本的 macOS 中都有出现。这些方法包括且不限于：</p>
+        <ul>
+        <li>插件注入</li>
+        <li>进程注入<sup><a href="https://objective-see.org/blog/blog_0x4C.html">[4]</a></sup></li>
+        <li><code>/Library</code> &amp; <code>$HOME</code> 挂载 <sup><a href="https://nvd.nist.gov/vuln/detail/CVE-2021-1784">[5]</a>, <a href="https://theevilbit.github.io/posts/cve_2021_30920/">[6]</a></sup></li>
+        <li>App 行为漏洞利用</li>
+        <li><code>/usr/bin/grep</code> 注入</li>
+        </ul>
+        <p>这样就呈现出了一个非常怪异的状态。macOS 在每一个版本里都留下了方便攻击者的 TCC 提权方式，却对有着 Administrator 权限的用户进行了严格的命令行指令的限制。举几个例子，以下操作就必须通过往 <code>TCC.db</code> 中写入数据来实现：</p>
+        <ul>
+        <li>通过 <code>/usr/bin/env</code> 在系统后台静默更新特定用户的壁纸。</li>
+        <li>通过 <code>/bin/bash</code> 静默禁用&amp;启用用户的麦克风和摄像头。这条用过 OBS 的人应该不陌生。</li>
+        </ul>
+        <p>而这些操作本身理应由 Administrator 通过命令行是可以轻松实现的。但是由于 macOS 的糟糕的权限设计，用户不得不深入到 <code>TCC.db</code> 里去，用各种很 Tricky 的方式来实现。</p>
+        <h2 id="-access-"><strong>详解 access 表结构</strong></h2>
+        <p>在上面的章节里，我们查看了 <code>TCC.db</code> 所包含的数据表。而里面最有用的 <code>access</code> 表的结构大概是这么个样子：</p>
+        <pre><code class="lang-sql"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> <span class="hljs-keyword">access</span> (
+            service <span class="hljs-built_in">TEXT</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,
+            <span class="hljs-keyword">client</span> <span class="hljs-built_in">TEXT</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,
+            client_type <span class="hljs-built_in">INTEGER</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,
+        
+        <span class="hljs-comment">--  allowed INTEGER NOT NULL,       -- Removed in Big Sur</span>
+        <span class="hljs-comment">--  prompt_count INTEGER NOT NULL,  -- Removed in Big Sur</span>
+        
+            auth_value <span class="hljs-built_in">INTEGER</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,    <span class="hljs-comment">-- Added in Big Sur</span>
+            auth_reason <span class="hljs-built_in">INTEGER</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,   <span class="hljs-comment">-- Added in Big Sur</span>
+            auth_version <span class="hljs-built_in">INTEGER</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,  <span class="hljs-comment">-- Added in Big Sur</span>
+        
+            csreq <span class="hljs-built_in">BLOB</span>,
+            policy_id <span class="hljs-built_in">INTEGER</span>,
+        
+            <span class="hljs-comment">-- Added in Mojave</span>
+            indirect_object_identifier_type <span class="hljs-built_in">INTEGER</span>,
+            indirect_object_identifier <span class="hljs-built_in">TEXT</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">"UNUSED"</span>,
+            indirect_object_code_identity <span class="hljs-built_in">BLOB</span>,
+        
+            flags <span class="hljs-built_in">INTEGER</span>,
+            last_modified <span class="hljs-built_in">INTEGER</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span> <span class="hljs-keyword">DEFAULT</span> (<span class="hljs-keyword">CAST</span>(strftime(<span class="hljs-string">'%s'</span>,<span class="hljs-string">'now'</span>) <span class="hljs-keyword">AS</span> <span class="hljs-built_in">INTEGER</span>))
+        )
+        </code></pre>
+        <p>这样的多维结构，使得用户可以在非常细致的颗粒度上控制自己的设备。例如，你可以授权某个应用访问你的摄像头，但是不授权它访问你的麦克风；你可以授权某个应用访问你的通讯录，但是不授权它访问你的日历；你可以授权某个应用访问你的照片，但是不授权它访问你的照片库。</p>
+        <p>以下为每个字段的详细解释：</p>
+        <ul>
+        <li><code>service</code>: 受 TCC 管理限制的服务名。比如 <code>kTCCServiceMicrophone</code>，<code>kTCCServiceCamera</code>，<code>kTCCServicePhotos</code> 等等。完整的列表我放在本文末尾了。</li>
+        <li><code>client</code>: 申请访问服务的应用的 <code>Bundle Identifier</code> 或者绝对路径（例如 <code>com.apple.finder</code> 或者 <code>/usr/libexec/sshd-keygen-wrapper</code>）</li>
+        <li><code>client_type</code>: 申请访问服务的应用的类型。<code>0</code> 代表 Bundle Identifier，<code>1</code> 代表绝对路径。</li>
+        <li><code>allowed</code>: (本字段仅存在于 Big Sur 之前的版本) 是否允许访问（<code>1</code>）或者拒绝（<code>0</code>）</li>
+        <li><code>prompt_count</code>: (本字段仅存在于 Big Sur 之前的版本) 用户被提示的次数。如果程序在第一次被拒绝后，仍然不断地申请访问，那么这个字段就会不断地增加。</li>
+        <li><code>auth_value</code>: (本字段仅存在于 Big Sur 以及之后的版本) 访问权限的值。<code>0</code> 代表拒绝，<code>1</code> 代表未知，<code>2</code> 代表允许，<code>3</code> 代表有限制。例如，允许应用选择照片，但是不允许它访问整个照片库。</li>
+        <li><code>auth_reason</code>: (本字段仅存在于 Big Sur 以及之后的版本) 用于描述 <code>auth_value</code> 是因何理由被设置的。一个常见的值是 <code>3</code>，代表 <strong>用户设置</strong>。完整的列表我也放在本文末尾了。</li>
+        <li><code>auth_version</code>: (本字段仅存在于 Big Sur 以及之后的版本) 默认为 <code>1</code>，也可能会随着未来的 macOS 版本而改变。</li>
+        <li><code>csreq</code>: 二进制代码签名要求 blob 必须满足特定的格式，以便获得访问权限。这是用于防止攻击者的欺骗/冒充。我会在下一个章节描述以下如何进行这部分内容的生成和解码。这里真得感谢 Keith Johnson，即便在英文互联网上，可能也就他那条回答真正解释清楚了这个字段。<font color="Orange"><b>可以简单理解为对 <code>client</code> 目标进行 <code>csreq</code> 处理后的 <code>Blob</code> 值，我会在下一节详细解释。</b></font></li>
+        <li><code>policy_id</code>: 这个字段与 MDM(Mobile Device Management) 策略相关，<a href="github.com/carlashley/tccprofile">carlashley/tccprofile</a> 可以用于生成这些配置文件。</li>
+        <li><code>indirect_object_identifier</code>: 用于指定某个服务（例如 <code>kTCCServiceAppleEvents</code>）的目标客户端。这个字段可以是 Bundle Identifier 或者绝对路径，就像 <code>client</code> 字段一样。在某些情况下，这个字段会被设置为 <code>UNUSED</code>。</li>
+        <li><code>indirect_object_identifier_type</code>: 用于指定 <code>indirect_object_identifier</code> 字段的类型。<code>0</code> 代表 Bundle Identifier，<code>1</code> 代表绝对路径。</li>
+        <li><code>indirect_object_code_identity</code>: 和 <code>csreq</code> 字段一样，这个字段也是用于防止攻击者的欺骗/冒充。但是这个字段的作用于 <code>indirect_object_identifier</code> 字段指定的客户端。<font color="Orange"><b>可以简单理解为对 <code>indirect_object_identifier</code> 目标进行 <code>csreq</code> 处理后的 <code>Blob</code> 值，我会在下一节详细解释。</b></font></li>
+        <li><code>flags</code>: 未知作用。值总是为 <code>0</code>，可能与 MDM 策略一起使用。</li>
+        <li><code>last_modified</code>: 最后一次修改的时间戳。</li>
+        </ul>
+        <p>如果你还不知道什么是 <code>Blob</code>，可以参考 <a href="https://dev.mysql.com/doc/refman/8.0/en/blob.html">The BLOB and TEXT Types</a>.</p>
+        <p>有了这些字段的详细解释，我们就可以读懂甚至构造一条 <code>TCC.db</code> <code>access</code> 语句了。当然在开始之前，我们还需要补充一个知识点，就是 <code>csreq</code>。利用 <code>csreq</code>，我们可以解码一个二进制代码签名 <code>Blob</code>，亦或者从零开始构造一个 <code>Blob</code>。</p>
+        <h2 id="-csreq-sup-3-https-stackoverflow-com-questions-52706542-how-to-get-csreq-of-macos-application-on-command-line-57259004-57259004-sup-"><strong>关于 <code>csreq</code><sup><a href="https://stackoverflow.com/questions/52706542/how-to-get-csreq-of-macos-application-on-command-line/57259004#57259004">[3]</a></sup></strong></h2>
+        <p>很多人一看到要构造一个 <code>Blob</code> 第一反应就是慌，事实上我也是一样。</p>
+        <p>不过我们在插入数据到 <code>TCC.db</code> 的时候，只需要构造一个满足特定格式的、非常短的 <code>Blob</code> 即可。这个 <code>Blob</code> 的格式是由 Apple 的 <code>libsecurity_codesigning</code> 库定义的，源代码可以在这里找到：<a href="https://github.com/toriningen/apple-security-framework/blob/master/OSX/libsecurity_codesigning/lib/requirement.h">libsecurity_codesigning/lib/requirement.h</a></p>
+        <p>比较粗略的看了一下，这个头文件定义了一个叫 <code>Requirement</code> 的类，用于表示苹果的代码签名要求（Code Signing Requirements）。<code>Requirement</code> 类的成员函数包括用于验证是否合法和满足格式要求的 <code>void validate</code> 和 <code>bool validates</code>；还有用于声明格式的 <code>kind</code> 函数，不过目前唯一支持的表达式的类型是 <code>opExpr</code>。</p>
+        <p>不过实际上我们并不需要手动写 <code>csreq</code> 的生成 &amp; 翻译工具，macOS 本身就自带了一个同名的命令行工具 <code>csreq</code>。这个工具可以用来生成 <code>Blob</code>，也可以用来解码符合格式要求的 <code>Blob</code>。这个工具一个旧版本的源代码在这里：<a href="https://opensource.apple.com/source/security_systemkeychain/security_systemkeychain-55191/src/csreq.cpp.auto.html">csreq.cpp</a>。</p>
+        <p>下面主要来说说怎么用吧。就以 <code>TCC.db</code> 插入时最常用的一条 <code>Blob</code> 为例，来看看怎么用 <code>csreq</code> 来生成和解码这个 <code>Blob</code>。</p>
+        <pre><code class="lang-shell"><span class="hljs-comment"># Convert the hex string into a binary blob</span>
+        <span class="hljs-variable">$ </span>BLOB=<span class="hljs-string">"FADE0C000000003000000001000000060000000200000012636F6D2E6170706C652E5465726D696E616C000000000003"</span>
+        <span class="hljs-variable">$ </span>echo <span class="hljs-string">"$BLOB"</span> | xxd -r -p &gt; terminal-csreq.bin
+        
+        <span class="hljs-comment"># Ask csreq to tell us what it means</span>
+        <span class="hljs-variable">$ </span>csreq -r- -t &lt; terminal-csreq.bin
+        identifier <span class="hljs-string">"com.apple.Terminal"</span> <span class="hljs-keyword">and</span> anchor apple
+        </code></pre>
+        <p>从解码的结果来看，这条 <code>Blob</code> 代表了一个通过苹果官方签名的 <code>com.apple.Terminal</code> 对象。</p>
+        <p>那这条信息 <code>identifier &quot;com.apple.Terminal&quot; and anchor apple</code> 本身是怎么来的呢？或者说，我们应该怎么写这条原始文本，并确认其符合 <code>Blob</code> 的解析原文的格式要求呢？其实也很简单，使用另一个命令行工具 <code>codesign</code> 就可以获得任意已签名对象的 <code>designated</code> 字段，也就是 <code>Blob</code> 的合法描述原文：</p>
+        <pre><code class="lang-shell">$ codesign -d -r- /Applications/Utilities/Terminal.app
+        Executable=/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal
+        designated =&gt; identifier <span class="hljs-string">"com.apple.Terminal"</span> and <span class="hljs-built_in">anchor</span> apple
+        </code></pre>
+        <p>这里再举一个类似的例子，也就是游戏开发团队非常常用的 P4V 客户端，这玩意儿的 <code>Blob</code> 是：</p>
+        <pre><code>fade0c000000009c00000001000000060000000600000006000000060000000200000010636f6d2e706572666f7263652e7034760000000f0000000e000000010000000a2a864886f763640602060000000000000000000e000000000000000a2a864886f7636406010d0000000000000000000b000000000000000a7375626a6563742e4f550000000000010000000a5059594653593<span class="hljs-number">53453370000</span>
+        </code></pre><p>我们来依样画葫芦地解码一下：</p>
+        <pre><code class="lang-shell"># Convert the hex string <span class="hljs-keyword">into</span> a binary blob
+        BLOB=<span class="hljs-string">"fade0c000000009c00000001000000060000000600000006000000060000000200000010636f6d2e706572666f7263652e7034760000000f0000000e000000010000000a2a864886f763640602060000000000000000000e000000000000000a2a864886f7636406010d0000000000000000000b000000000000000a7375626a6563742e4f550000000000010000000a505959465359353453370000"</span>
+        echo <span class="hljs-string">"$BLOB"</span> | xxd -r -p &gt; p4v-csreq.bin
+        
+        # Ask csreq to tell us what it means
+        $ csreq -r- -t &lt; p4v-csreq.bin
+        identifier <span class="hljs-string">"com.perforce.p4v"</span> <span class="hljs-keyword">and</span> anchor apple generic <span class="hljs-keyword">and</span> certificate <span class="hljs-number">1</span>[field<span class="hljs-meta">.1</span><span class="hljs-meta">.2</span><span class="hljs-meta">.840</span><span class="hljs-meta">.113635</span><span class="hljs-meta">.100</span><span class="hljs-meta">.6</span><span class="hljs-meta">.2</span><span class="hljs-meta">.6</span>] /* exists */ <span class="hljs-keyword">and</span> certificate leaf[field<span class="hljs-meta">.1</span><span class="hljs-meta">.2</span><span class="hljs-meta">.840</span><span class="hljs-meta">.113635</span><span class="hljs-meta">.100</span><span class="hljs-meta">.6</span><span class="hljs-meta">.1</span><span class="hljs-meta">.13</span>] /* exists */ <span class="hljs-keyword">and</span> certificate leaf[subject.OU] = PYYFSY54S7
+        
+        # ask codesign what the requirement text from the application itself is
+        $ codesign -d -r- /Applications/p4v.app
+        Executable=/Applications/p4v.app/Contents/MacOS/p4v
+        designated =&gt; identifier <span class="hljs-string">"com.perforce.p4v"</span> <span class="hljs-keyword">and</span> anchor apple generic <span class="hljs-keyword">and</span> certificate <span class="hljs-number">1</span>[field<span class="hljs-meta">.1</span><span class="hljs-meta">.2</span><span class="hljs-meta">.840</span><span class="hljs-meta">.113635</span><span class="hljs-meta">.100</span><span class="hljs-meta">.6</span><span class="hljs-meta">.2</span><span class="hljs-meta">.6</span>] /* exists */ <span class="hljs-keyword">and</span> certificate leaf[field<span class="hljs-meta">.1</span><span class="hljs-meta">.2</span><span class="hljs-meta">.840</span><span class="hljs-meta">.113635</span><span class="hljs-meta">.100</span><span class="hljs-meta">.6</span><span class="hljs-meta">.1</span><span class="hljs-meta">.13</span>] /* exists */ <span class="hljs-keyword">and</span> certificate leaf[subject.OU] = PYYFSY54S7
+        </code></pre>
+        <p>可以看到，就是这样简单的处理，就能获得任意对象合法的 <code>Blob</code> 描述原文。</p>
+        <p>那么第二个问题来了，既然可以通过 <code>codesign</code> 来获得 <code>Blob</code> 的描述原文，那么我们应该如何获得 <code>Blob</code> 本身呢？这个问题其实也很简单，只要把 <code>Blob</code> 的描述原文通过 <code>csreq</code> 转换成二进制格式即可。</p>
+        <p>这里我们继续用 <code>p4v.app</code> 为例：</p>
+        <pre><code class="lang-shell"><span class="hljs-comment"># Get the requirement string from codesign</span>
+        <span class="hljs-variable">$ </span>REQ_STR=<span class="hljs-variable">$(</span>codesign -d -r- <span class="hljs-regexp">/Applications/p</span>4v.app/ <span class="hljs-number">2</span>&gt;&amp;<span class="hljs-number">1</span> | awk -F <span class="hljs-string">' =&gt; '</span> <span class="hljs-string">'/designated/{print $2}'</span>)
+        
+        <span class="hljs-comment"># Convert the requirements string into it's binary representation(sadly it seems csreq requires the output to be a file; so we just throw it in /tmp)</span>
+        <span class="hljs-variable">$ </span>echo <span class="hljs-string">"$REQ_STR"</span> | csreq -r- -b /tmp/csreq.bin
+        
+        <span class="hljs-comment"># Convert the binary form to hex, and print it nicely for use in sqlite</span>
+        <span class="hljs-variable">$ </span>REQ_HEX=<span class="hljs-variable">$(</span>xxd -p /tmp/csreq.bin  | tr -d <span class="hljs-string">'\n'</span>)
+        <span class="hljs-variable">$ </span>echo <span class="hljs-string">"X'$REQ_HEX'"</span>
+        X<span class="hljs-string">'fade0c000000009c00000001000000060000000600000006000000060000000200000010636f6d2e706572666f7263652e7034760000000f0000000e000000010000000a2a864886f763640602060000000000000000000e000000000000000a2a864886f7636406010d0000000000000000000b000000000000000a7375626a6563742e4f550000000000010000000a505959465359353453370000'</span>
+        </code></pre>
+        <p>如你所见，刚才的 <code>Blob</code> 描述原文，就这样简单的获取到了。看到这一步的你，应该已经有能力自由地获得任意目标的 <code>Blob</code> 描述原文，并将其转换成 <code>Blob</code> 本身。</p>
+        <h2 id="-tcc-db-access-"><strong>动手构造一条 <code>TCC.db</code> <code>access</code> 语句</strong></h2>
+        <p>既然万事具备，说再多不如动手构造一条 <code>TCC.db</code> 的插入语句来得记忆深刻。</p>
+        <p>这里我们以 <code>kTCCServiceAppleEvents</code> 服务为例，构造一个允许 <code>/usr/bin/env</code> 通过 <code>AppleEvents</code> 服务访问 <code>/System/Library/CoreServices/System Events.app</code> 的 <code>access</code> 表的插入语句。</p>
+        <p>这个插入语句的作用呢，一般来说是用来帮助 <code>osascript</code> 命令在执行 Apple Script 的时候，强制跳过一些用户 GUI 层的确认对话框，从而达到<strong>静默</strong>执行 Login Items 的目的。在类似 JAMF Pro 这样的企业级管理软件中，有不少类似的骚操作。</p>
+        <p>好，我们开始。</p>
+        <ul>
+        <li>首先是 <code>service</code> 字段，这个字段的值是 <code>kTCCServiceAppleEvents</code>，是我们的目标服务，也就是用于跳过一些强制行的用户确认 Prompts 的服务对象。<font color="Orange"><b>下一节为参考表</b></font></li>
+        <li>然后是 <code>client</code> 字段，这个字段的值是 <code>/usr/bin/env</code>，这个是我们的目标客户端，也就是我们要让它通过 <code>kTCCServiceAppleEvents</code> 服务访问 <code>/System/Applications/System Preferences.app</code> 的客户端。这里无论是 <code>/usr/bin/env</code> 还是其对应的 <code>identifier</code>，都是可以的，所以也可以写成 <code>com.apple.env</code>。</li>
+        <li><code>client_type</code> 字段，如果你 <code>client</code> 填的是 <code>/usr/bin/env</code>，也就是绝对路径，那就这个字段的值是 <code>1</code>；如果填的是 <code>com.apple.env</code>，也就是 <code>identifier</code>，那就这个字段的值是 <code>0</code>。</li>
+        <li><code>auth_value</code> 字段，那肯定是允许嘛。所以这个字段的值是 <code>2</code>。</li>
+        <li><code>auth_reason</code> 字段，这个字段的值是 <code>3</code>，也就是 <code>User Set</code>。表示是用户自己设置的（笑）。<font color="Orange"><b>下一节为参考表</b></font></li>
+        <li><code>auth_version</code> 字段，默认就是 <code>1</code>。别问，别管。</li>
+        <li><code>csreq</code> 字段，这个字段就是对 <code>/usr/bin/env</code> 的 <code>Blob</code> 描述原文的二进制表示。<font color="Orange"><b>构造方法上面一节已经说的清清楚楚了。</b></font></li>
+        <li><code>policy_id</code> 字段，我们暂时用不到，设置为 <code>NULL</code>。</li>
+        <li><code>indirect_object_identifier_type</code> 也就是被访问对象的类型，这里是 <code>0</code>，也就是 <code>identifier</code>。</li>
+        <li><code>indirect_object_identifier</code> 字段，这个字段的值是 <code>/System/Library/CoreServices/System Events.app/</code> 的 <code>identifier</code>，也就是 <code>com.apple.systemevents</code>。</li>
+        <li><code>indirect_object_code_identity</code> 字段，这个字段的值是 <code>/System/Library/CoreServices/System Events.app/</code> 的 <code>Blob</code> 二进制表示。<font color="Orange"><b>构造方法也是参考上一节。</b></font></li>
+        <li><code>flags</code> 字段，我们暂时用不到，设置为 <code>NULL</code>。</li>
+        <li><code>last_modified</code> 字段，这个字段的值只要是合法的时间戳就行，我自己一般喜欢用 <code>2022-01-01 00:00:00</code>，也就是 <code>1642634565</code>。</li>
+        </ul>
+        <p>那么现在，我们的插入语句已经全部完成了，写出来就是这么个样子：</p>
+        <pre><code class="lang-sql"><span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> <span class="hljs-keyword">access</span> <span class="hljs-keyword">VALUES</span>(
+            <span class="hljs-string">'kTCCServiceAppleEvents'</span>,   <span class="hljs-comment">-- service</span>
+            <span class="hljs-string">'/usr/bin/env'</span>,                <span class="hljs-comment">-- client</span>
+            <span class="hljs-number">1</span>,                          <span class="hljs-comment">-- client_type</span>
+            <span class="hljs-number">2</span>,                          <span class="hljs-comment">-- auth_value</span>
+            <span class="hljs-number">3</span>,                          <span class="hljs-comment">-- auth_reason</span>
+            <span class="hljs-number">1</span>，                         <span class="hljs-comment">-- auth_version</span>
+            <span class="hljs-comment">-- csreq</span>
+            X<span class="hljs-string">'fade0c000000002c0000000100000006000000020000000d636f6d2e6170706c652e656e7600000000000003'</span>,
+            <span class="hljs-literal">NULL</span>,                       <span class="hljs-comment">-- policy_id</span>
+            <span class="hljs-number">0</span>,                          <span class="hljs-comment">-- indirect_object_identifier_type</span>
+            <span class="hljs-string">'com.apple.systemevents'</span>,   <span class="hljs-comment">-- indirect_object_identifier</span>
+            <span class="hljs-comment">-- indirect_object_code_identity</span>
+            X<span class="hljs-string">'fade0c000000003400000001000000060000000200000016636f6d2e6170706c652e73797374656d6576656e7473000000000003'</span>,
+            <span class="hljs-literal">NULL</span>,                       <span class="hljs-comment">-- flags</span>
+            <span class="hljs-number">1642634565</span>                  <span class="hljs-comment">-- last_modified</span>
+        );
+        </code></pre>
+        <p>之后我们就可以用 <code>sqlite3</code> 命令行工具，或者 <code>DB Browser for SQLite</code> 这样的 GUI 工具，将这条语句插入到 <code>TCC.db</code> 中了。</p>
+        <p>然后，你就可以通过构造一个 <code>plist</code> 文件和 <code>launchctl</code> 命令，给用户加载一些 Login Items，例如更换壁纸、更换 Dock 图标、更换桌面图标等等，而不需要经过用户在 GUI 的窗口确认了。</p>
+        <p>以下为一个简单的 plist 文件示例：</p>
+        <pre><code class="lang-xml"><span class="xml"><span class="php"><span class="hljs-meta">&lt;?</span>xml version=<span class="hljs-string">"1.0"</span> encoding=<span class="hljs-string">"UTF-8"</span><span class="hljs-meta">?&gt;</span></span>
+        <span class="hljs-meta">&lt;!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">plist</span> <span class="hljs-attr">version</span>=<span class="hljs-string">"1.0"</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dict</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">key</span>&gt;</span>Label<span class="hljs-tag">&lt;/<span class="hljs-name">key</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">string</span>&gt;</span></span><span class="hljs-template-variable">{{ plist_name }}</span><span class="xml"><span class="hljs-tag">&lt;/<span class="hljs-name">string</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">key</span>&gt;</span>Program<span class="hljs-tag">&lt;/<span class="hljs-name">key</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">string</span>&gt;</span></span><span class="hljs-template-variable">{{ apple_script_path }}</span><span class="xml"><span class="hljs-tag">&lt;/<span class="hljs-name">string</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">key</span>&gt;</span>RunAtLoad<span class="hljs-tag">&lt;/<span class="hljs-name">key</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">true</span>/&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dict</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">plist</span>&gt;</span></span>
+        </code></pre>
+        <p><font color="Orange"><b>吐槽</b></font>：明明非常正常的设备和系统管理操作，非要被苹果弄得像是黑客入侵操作一样。真有你的，库克。</p>
+        <h2 id="-service-auth_reason-sup-2-https-www-rainforestqa-com-blog-macos-tcc-db-deep-dive-sup-"><strong><code>Service</code> &amp; <code>Auth_Reason</code> 参考表<sup><a href="https://www.rainforestqa.com/blog/macos-tcc-db-deep-dive">[2]</a></sup></strong></h2>
+        <p><br></p>
+        <details style="box-shadow: 2px 2px 5px; border-radius: 6px; padding: .5em .5em .5em;">
+            <summary><b>SERVICE List</b></summary>
+            <br>
+            <table border="1">
+                <tr> <th><b>Value</b></th> <th><b>Description</b></th> </tr>
+                <tr> <td><b>kTCCServiceAddressBook</b></td> <td>client would like to access your contacts.</td> </tr>
+                <tr> <td><b>kTCCServiceAppleEvents</b></td> <td>client wants access to control indirect_object. Allowing control will provide access to documents and       data in indirect_object, and to perform actions within that app.</td> </tr>
+                <tr> <td><b>kTCCServiceBluetoothAlways</b></td> <td>client would like to use Bluetooth.</td> </tr>
+                <tr> <td><b>kTCCServiceCalendar</b></td> <td>client would like to access your calendar.</td> </tr>
+                <tr> <td><b>kTCCServiceCamera</b></td> <td>client would like to access the camera.</td> </tr>
+                <tr> <td><b>kTCCServiceContactsFull</b></td> <td>client would like to access all of your contacts information.</td> </tr>
+                <tr> <td><b>kTCCServiceContactsLimited</b></td> <td>client would like to access your contacts basic information.</td> </tr>
+                <tr> <td><b>kTCCServiceFileProviderDomain</b></td> <td>client wants to access files managed by indirect_object.</td> </tr>
+                <tr> <td><b>kTCCServiceFileProviderPresence</b></td> <td>Do you want to allow client to see when you are using files managed by it? It will see which applications are used to access files and whether you are actively using them. It will not see when files that are not managed by it are accessed.</td> </tr>
+                <tr> <td><b>kTCCServiceLocation</b></td> <td>client would like to use your current location.</td> </tr>
+                <tr> <td><b>kTCCServiceMediaLibrary</b></td> <td>client would like to access Apple Music, your music and video activity, and your media library.</td> </tr>
+                <tr> <td><b>kTCCServiceMicrophone</b></td> <td>client would like to access the microphone.</td> </tr>
+                <tr> <td><b>kTCCServiceMotion</b></td> <td>client Would Like to Access Your Motion &amp; Fitness Activity.</td> </tr>
+                <tr> <td><b>kTCCServicePhotos</b></td> <td>client Would Like to Access Your Photos</td> </tr>
+                <tr> <td><b>kTCCServicePhotosAdd</b></td> <td>client Would Like to Add to your Photos</td> </tr>
+                <tr> <td><b>kTCCServicePrototype3Rights</b></td> <td>client Would Like Authorization to Test Service Proto3Right.</td> </tr>
+                <tr> <td><b>kTCCServicePrototype4Rights</b></td> <td>client Would Like Authorization to Test Service Proto4Right.</td> </tr>
+                <tr> <td><b>kTCCServiceReminders</b></td> <td>client would like to access your reminders.</td> </tr>
+                <tr> <td><b>kTCCServiceScreenCapture</b></td> <td>client would like to capture the contents of the system display.</td> </tr>
+                <tr> <td><b>kTCCServiceSiri</b></td> <td>Would You Like to Use client with Siri?</td> </tr>
+                <tr> <td><b>kTCCServiceSpeechRecognition</b></td> <td>client Would Like to Access Speech Recognition.</td> </tr>
+                <tr> <td><b>kTCCServiceSystemPolicyDesktopFolder</b></td> <td>client would like to access files in your Desktop folder.</td> </tr>
+                <tr> <td><b>kTCCServiceSystemPolicyDeveloperFiles</b></td> <td>client would like to access a file used in Software Development.</td> </tr>
+                <tr> <td><b>kTCCServiceSystemPolicyDocumentsFolder</b></td> <td>client would like to access files in your Documents folder.</td> </tr>
+                <tr> <td><b>kTCCServiceSystemPolicyDownloadsFolder</b></td> <td>client would like to access files in your Downloads folder.</td> </tr>
+                <tr> <td><b>kTCCServiceSystemPolicyNetworkVolumes</b></td> <td>client would like to access files on a network volume.</td> </tr>
+                <tr> <td><b>kTCCServiceSystemPolicyRemovableVolumes</b></td> <td>client would like to access files on a removable volume.</td> </tr>
+                <tr> <td><b>kTCCServiceSystemPolicySysAdminFiles</b></td> <td>client would like to administer your computer. Administration can include modifying passwords, networking, and system settings.</td> </tr>
+                <tr> <td><b>kTCCServiceWillow</b></td> <td>client would like to access your Home data.</td> </tr>
+                <tr> <td><b>kTCCServiceSystemPolicyAllFiles</b></td> <td>Full Disk Access</td> </tr>
+                <tr> <td><b>kTCCServiceAccessibility</b></td> <td>Allows app to control your computer</td> </tr>
+                <tr> <td><b>kTCCServicePostEvent</b></td> <td>Allows to send keystrokes</td> </tr>
+                <tr> <td><b>kTCCServiceListenEvent</b></td> <td>Input Monitoring; to monitor input from your keyboard</td> </tr>
+                <tr> <td><b>kTCCServiceDeveloperTool</b></td> <td>Allows app to run software locally that do not meet the system’s security policy</td> </tr>
+                <tr> <td><b>kTCCServiceLiverpool</b></td> <td>Related to location services</td> </tr>
+                <tr> <td><b>kTCCServiceUbiquity</b></td> <td>Related to iCloud</td> </tr>
+                <tr> <td><b>kTCCServiceShareKit</b></td> <td>Related to the share feature(presumably from iOS)(ShareKit)</td> </tr>
+                <tr> <td><b>kTCCServiceLinkedIn</b></td> <td>LinkedIn</td> </tr>
+                <tr> <td><b>kTCCServiceTwitter</b></td> <td>Twitter</td> </tr>
+                <tr> <td><b>kTCCServiceFacebook</b></td> <td>Facebook</td> </tr>
+                <tr> <td><b>kTCCServiceSinaWeibo</b></td> <td>Sina Weibo</td> </tr>
+                <tr> <td><b>kTCCServiceTencentWeibo</b></td> <td>Tencent Weibo</td> </tr>
+            </table>
+        </details>
+        ‍
+        <br>
+        <details style="box-shadow: 2px 2px 5px; border-radius: 6px; padding: .5em .5em .5em;">
+            <summary><b>AUTH_REASON List</b></summary>
+            <br>
+            <table border="1">
+                <tr> <th><b>Value</b></th> <th><b>Description</b></th> </tr>
+                <tr> <td><b>1</b></td> <td>Error</td> </tr>
+                <tr> <td><b>2</b></td> <td>User Consent</td> </tr>
+                <tr> <td><b>3</b></td> <td>User Set</td> </tr>
+                <tr> <td><b>4</b></td> <td>System Set</td> </tr>
+                <tr> <td><b>5</b></td> <td>Service Policy</td> </tr>
+                <tr> <td><b>6</b></td> <td>MDM Policy</td> </tr>
+                <tr> <td><b>7</b></td> <td>Override Policy</td> </tr>
+                <tr> <td><b>8</b></td> <td>Missing usage string</td> </tr>
+                <tr> <td><b>9</b></td> <td>Prompt Timeout</td> </tr>
+                <tr> <td><b>10</b></td> <td>Preflight Unknown</td> </tr>
+                <tr> <td><b>11</b></td> <td>Entitled</td> </tr>
+                <tr> <td><b>12</b></td> <td>App Type Policy</td> </tr>
+            </table>
+        </details>
+        
+        <p><br></p>
+        <h2 id="-"><strong>相关文献</strong></h2>
+        <ol>
+        <li><em><a href="https://www.slideshare.net/CsabaFitzl/20-ways-to-bypass-your-mac-os-privacy-mechanisms">20+ ways to bypass your mac os privacy mechanisms -- Csaba Fitzl</a></em></li>
+        <li><em><a href="https://www.rainforestqa.com/blog/macos-tcc-db-deep-dive">A deep dive into macOS TCC.db -- Keith Johnson</a></em></li>
+        <li><em><a href="https://stackoverflow.com/questions/52706542/how-to-get-csreq-of-macos-application-on-command-line/57259004#57259004">How to get csreq of macOS application on command line? -- Keith Johnson</a></em></li>
+        <li><em><a href="https://objective-see.org/blog/blog_0x4C.html">CVE-2020–9934</a></em></li>
+        <li><em><a href="https://nvd.nist.gov/vuln/detail/CVE-2021-1784">CVE-2021-1784</a></em></li>
+        <li><em><a href="https://theevilbit.github.io/posts/cve_2021_30920/">CVE-2021-30920</a></em></li>
+        </ol>
+             
+        <!-- Post Content Ends Here -->
+      </div>
+      <div class="footer">
+      <p><a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC 4.0</a>
+        <br>
+        &copy; 1995-<script type="text/javascript">document.write((new Date()).getFullYear());</script>
+        Kivinsae Fang
+        <br>
+        Powered by Raw HTML
+      </p>
+      </div>
+    </div>
+  </body>
+</html>
