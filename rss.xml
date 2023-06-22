@@ -1,0 +1,967 @@
+<feed xmlns="http://www.w3.org/1999/xhtml"><title>Your Blog Title</title><link rel="self" href="http://www.kivinsae.com/rss.xml" /><updated>2023-06-20T06:35:56.198Z</updated><entry><title>TCC 数据库：开发者的噩梦，攻击者的狂欢</title><link href="http://www.kivinsae.com/posts/2023-03-26-tcc_db.html" /><content type="html">&lt;head&gt;
+    &lt;/head&gt;&lt;body&gt;&lt;nav&gt;
+      &lt;ul&gt;
+        &lt;li&gt;&lt;a href="../index.html"&gt;Home&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href="../archives.html"&gt;Archives&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href="../categories.html"&gt;Categories&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href="../friends.html"&gt;Friends&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href="../about.html"&gt;About&lt;/a&gt;&lt;/li&gt;
+      &lt;/ul&gt;
+    &lt;/nav&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;title&gt;TCC 数据库：开发者的噩梦，攻击者的狂欢&lt;/title&gt;
+    &lt;link rel="stylesheet" href="../styles/style.css"&gt;
+    &lt;link rel="stylesheet" href="../styles/prism-tomorrow.css"&gt;
+  
+  
+    &lt;script src="../styles/prism-tomorrow.js"&gt;&lt;/script&gt;
+    &lt;div class="container"&gt;
+      &lt;div class="header"&gt;
+        &lt;h1&gt;TCC 数据库：开发者的噩梦，攻击者的狂欢&lt;/h1&gt;
+      &lt;/div&gt;
+      &lt;div class="post"&gt;
+        &lt;!-- Post Content Starts Here --&gt;
+        &lt;font color="Orange"&gt;&lt;b&gt;苹果，我完全无法理解你&lt;/b&gt;&lt;/font&gt;
+
+        &lt;h2 id="-"&gt;&lt;strong&gt;前言&lt;/strong&gt;&lt;/h2&gt;
+        &lt;p&gt;最近几周，我花了不少时间在 macOS 的自动化流程以及 MDM (Mobile Device Management) 的开发上。&lt;/p&gt;
+        &lt;p&gt;事实上我一直以来都难以理解为什么有那么多企业选择使用 macOS 作为员工的工作电脑。&lt;/p&gt;
+        &lt;p&gt;姑且可以认为多数的科技公司从业者都具备一些必要的计算机常识和命令行技能，但是 macOS 本身其实是基于 XNU 内核构建的 Darwin ，而 Darwin 本身又包含了大量来自 BSD 的特性，这些特性意味着用户在深入使用的时候，往往不得不面对一些在 BSD 和 Linux 中同名同姓却完全不同的命令，例如 &lt;code&gt;mount&lt;/code&gt;。&lt;/p&gt;
+        &lt;p&gt;而更加好死不死的是，Apple 还额外贴心地从 macOS 10.11 开始加入了 &lt;code&gt;SIP (System Integrity Protection)&lt;/code&gt;，也就是著名的&lt;font color="DarkOrchid"&gt;&lt;b&gt;苹果是你的爸爸&lt;/b&gt;&lt;/font&gt;组件。&lt;/p&gt;
+        &lt;p&gt;这意味着无论你是卑微的个人设备还是财大气粗的企业采购设备，都要面临你的 root 不是真正的 root 这样的糟糕体验。而更加搞笑的是，有时候 SIP 不但没有真正保护用户安全，还接二连三的爆出涉及 &lt;code&gt;TCC.db&lt;/code&gt; 的各种权限漏洞，给黑客大开便捷之门。有时候真觉得 macOS 上开发工作流太噩梦了。&lt;/p&gt;
+        &lt;p&gt;本篇我就稍微聊一聊 &lt;code&gt;TCC.db&lt;/code&gt; 这个数据库。&lt;/p&gt;
+        &lt;h2 id="-tcc-transparency-consent-and-control-"&gt;&lt;strong&gt;TCC - Transparency, Consent, and Control&lt;/strong&gt;&lt;/h2&gt;
+        &lt;p&gt;&lt;code&gt;TCC.db&lt;/code&gt; 是 macOS 10.9 之后引入的一个数据库，用于记录用户对于各种系统服务的授权情况。系统级 &lt;code&gt;TCC.db&lt;/code&gt; 的完整路径是 &lt;code&gt;/Library/Application Support/com.apple.TCC/TCC.db&lt;/code&gt;。而对于每一个单独的用户，其实还有一个 &lt;code&gt;TCC.db&lt;/code&gt;，位于 &lt;code&gt;$HOME/Library/Application Support/com.apple.TCC/TCC.db&lt;/code&gt;。&lt;/p&gt;
+        &lt;p&gt;这个数据库的结构非常简单，只有 6 个表：&lt;/p&gt;
+        &lt;ul&gt;
+        &lt;li&gt;&lt;code&gt;access&lt;/code&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;active_policy&lt;/code&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;expired&lt;/code&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;access_overrides&lt;/code&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;admin&lt;/code&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;policies&lt;/code&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;p&gt;事实上这 6 个表里，在默认情况下有且只有 &lt;code&gt;access&lt;/code&gt; 这一个表是有有效数据的。其他的表利用 sqlite3 查看的话可以发现都是空表，而 &lt;code&gt;admin&lt;/code&gt; 表也仅有一行：&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-shell"&gt;sqlite3 "./Library/Application Support/com.apple.TCC/TCC.db" "&lt;span class="hljs-keyword"&gt;select&lt;/span&gt; * &lt;span class="hljs-keyword"&gt;from&lt;/span&gt; access_overrides;"
+        sqlite3 "./Library/Application Support/com.apple.TCC/TCC.db" "&lt;span class="hljs-keyword"&gt;select&lt;/span&gt; * &lt;span class="hljs-keyword"&gt;from&lt;/span&gt; active_policy;"
+        sqlite3 "./Library/Application Support/com.apple.TCC/TCC.db" "&lt;span class="hljs-keyword"&gt;select&lt;/span&gt; * &lt;span class="hljs-keyword"&gt;from&lt;/span&gt; expired;"
+        sqlite3 "./Library/Application Support/com.apple.TCC/TCC.db" "&lt;span class="hljs-keyword"&gt;select&lt;/span&gt; * &lt;span class="hljs-keyword"&gt;from&lt;/span&gt; policies;"
+        sqlite3 "./Library/Application Support/com.apple.TCC/TCC.db" "&lt;span class="hljs-keyword"&gt;select&lt;/span&gt; * &lt;span class="hljs-keyword"&gt;from&lt;/span&gt; &lt;span class="hljs-keyword"&gt;admin&lt;/span&gt;;"
+        version|20
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;font color="DimGrey"&gt;&lt;strong&gt;PS&lt;/strong&gt;: 无端推测，iOS 的权限实现大概率也是基于类似的机制。&lt;/font&gt;
+        
+        &lt;p&gt;然而这一切对开发者友善的前提是，macOS 需要在 Darwin 的命令行支持或系统开发接口中，也复刻一套这样的授权机制。然而事实上是，macOS 没有做到这一点，也似乎并不打算做好这些支持。&lt;/p&gt;
+        &lt;p&gt;稍微对 SIP 有所接触的人应该会很容易察觉到，苹果对于&lt;b&gt;&lt;i&gt;用户可以在自己的机器上可以做什么&lt;/i&gt;&lt;/b&gt;这件事情上，做了非常多的限制。在最近的几个版本的 macOS 中，对于所有系统相关的目录，无论用户本身是否是 Administrator，都仅能做只读操作；即便用户通过 &lt;code&gt;sudo su&lt;/code&gt; 提权到 root，也无法对这些目录进行任何的写操作。&lt;/p&gt;
+        &lt;p&gt;然而 macOS 就仿佛脑子神经搭错了一样，把 &lt;code&gt;TCC.db&lt;/code&gt; 放在了一个普通用户可以进行读写的位置。这就留下隐患了。&lt;/p&gt;
+        &lt;p&gt;当然，macOS 在正常情况下对 &lt;code&gt;TCC.db&lt;/code&gt; 还是进行了许多的保护，但是在过去的几年中，这些保护可以被二十多种方法&lt;sup&gt;&lt;a href="https://www.slideshare.net/CsabaFitzl/20-ways-to-bypass-your-mac-os-privacy-mechanisms"&gt;[1]&lt;/a&gt;&lt;/sup&gt;绕过，TCC 提权漏洞在几乎每一个版本的 macOS 中都有出现。这些方法包括且不限于：&lt;/p&gt;
+        &lt;ul&gt;
+        &lt;li&gt;插件注入&lt;/li&gt;
+        &lt;li&gt;进程注入&lt;sup&gt;&lt;a href="https://objective-see.org/blog/blog_0x4C.html"&gt;[4]&lt;/a&gt;&lt;/sup&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;/Library&lt;/code&gt; &amp;amp; &lt;code&gt;$HOME&lt;/code&gt; 挂载 &lt;sup&gt;&lt;a href="https://nvd.nist.gov/vuln/detail/CVE-2021-1784"&gt;[5]&lt;/a&gt;, &lt;a href="https://theevilbit.github.io/posts/cve_2021_30920/"&gt;[6]&lt;/a&gt;&lt;/sup&gt;&lt;/li&gt;
+        &lt;li&gt;App 行为漏洞利用&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;/usr/bin/grep&lt;/code&gt; 注入&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;p&gt;这样就呈现出了一个非常怪异的状态。macOS 在每一个版本里都留下了方便攻击者的 TCC 提权方式，却对有着 Administrator 权限的用户进行了严格的命令行指令的限制。举几个例子，以下操作就必须通过往 &lt;code&gt;TCC.db&lt;/code&gt; 中写入数据来实现：&lt;/p&gt;
+        &lt;ul&gt;
+        &lt;li&gt;通过 &lt;code&gt;/usr/bin/env&lt;/code&gt; 在系统后台静默更新特定用户的壁纸。&lt;/li&gt;
+        &lt;li&gt;通过 &lt;code&gt;/bin/bash&lt;/code&gt; 静默禁用&amp;amp;启用用户的麦克风和摄像头。这条用过 OBS 的人应该不陌生。&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;p&gt;而这些操作本身理应由 Administrator 通过命令行是可以轻松实现的。但是由于 macOS 的糟糕的权限设计，用户不得不深入到 &lt;code&gt;TCC.db&lt;/code&gt; 里去，用各种很 Tricky 的方式来实现。&lt;/p&gt;
+        &lt;h2 id="-access-"&gt;&lt;strong&gt;详解 access 表结构&lt;/strong&gt;&lt;/h2&gt;
+        &lt;p&gt;在上面的章节里，我们查看了 &lt;code&gt;TCC.db&lt;/code&gt; 所包含的数据表。而里面最有用的 &lt;code&gt;access&lt;/code&gt; 表的结构大概是这么个样子：&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-sql"&gt;&lt;span class="hljs-keyword"&gt;CREATE&lt;/span&gt; &lt;span class="hljs-keyword"&gt;TABLE&lt;/span&gt; &lt;span class="hljs-keyword"&gt;access&lt;/span&gt; (
+            service &lt;span class="hljs-built_in"&gt;TEXT&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,
+            &lt;span class="hljs-keyword"&gt;client&lt;/span&gt; &lt;span class="hljs-built_in"&gt;TEXT&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,
+            client_type &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,
+        
+        &lt;span class="hljs-comment"&gt;--  allowed INTEGER NOT NULL,       -- Removed in Big Sur&lt;/span&gt;
+        &lt;span class="hljs-comment"&gt;--  prompt_count INTEGER NOT NULL,  -- Removed in Big Sur&lt;/span&gt;
+        
+            auth_value &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,    &lt;span class="hljs-comment"&gt;-- Added in Big Sur&lt;/span&gt;
+            auth_reason &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,   &lt;span class="hljs-comment"&gt;-- Added in Big Sur&lt;/span&gt;
+            auth_version &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,  &lt;span class="hljs-comment"&gt;-- Added in Big Sur&lt;/span&gt;
+        
+            csreq &lt;span class="hljs-built_in"&gt;BLOB&lt;/span&gt;,
+            policy_id &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt;,
+        
+            &lt;span class="hljs-comment"&gt;-- Added in Mojave&lt;/span&gt;
+            indirect_object_identifier_type &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt;,
+            indirect_object_identifier &lt;span class="hljs-built_in"&gt;TEXT&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt; &lt;span class="hljs-keyword"&gt;DEFAULT&lt;/span&gt; &lt;span class="hljs-string"&gt;"UNUSED"&lt;/span&gt;,
+            indirect_object_code_identity &lt;span class="hljs-built_in"&gt;BLOB&lt;/span&gt;,
+        
+            flags &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt;,
+            last_modified &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt; &lt;span class="hljs-keyword"&gt;DEFAULT&lt;/span&gt; (&lt;span class="hljs-keyword"&gt;CAST&lt;/span&gt;(strftime(&lt;span class="hljs-string"&gt;'%s'&lt;/span&gt;,&lt;span class="hljs-string"&gt;'now'&lt;/span&gt;) &lt;span class="hljs-keyword"&gt;AS&lt;/span&gt; &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt;))
+        )
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;p&gt;这样的多维结构，使得用户可以在非常细致的颗粒度上控制自己的设备。例如，你可以授权某个应用访问你的摄像头，但是不授权它访问你的麦克风；你可以授权某个应用访问你的通讯录，但是不授权它访问你的日历；你可以授权某个应用访问你的照片，但是不授权它访问你的照片库。&lt;/p&gt;
+        &lt;p&gt;以下为每个字段的详细解释：&lt;/p&gt;
+        &lt;ul&gt;
+        &lt;li&gt;&lt;code&gt;service&lt;/code&gt;: 受 TCC 管理限制的服务名。比如 &lt;code&gt;kTCCServiceMicrophone&lt;/code&gt;，&lt;code&gt;kTCCServiceCamera&lt;/code&gt;，&lt;code&gt;kTCCServicePhotos&lt;/code&gt; 等等。完整的列表我放在本文末尾了。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;client&lt;/code&gt;: 申请访问服务的应用的 &lt;code&gt;Bundle Identifier&lt;/code&gt; 或者绝对路径（例如 &lt;code&gt;com.apple.finder&lt;/code&gt; 或者 &lt;code&gt;/usr/libexec/sshd-keygen-wrapper&lt;/code&gt;）&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;client_type&lt;/code&gt;: 申请访问服务的应用的类型。&lt;code&gt;0&lt;/code&gt; 代表 Bundle Identifier，&lt;code&gt;1&lt;/code&gt; 代表绝对路径。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;allowed&lt;/code&gt;: (本字段仅存在于 Big Sur 之前的版本) 是否允许访问（&lt;code&gt;1&lt;/code&gt;）或者拒绝（&lt;code&gt;0&lt;/code&gt;）&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;prompt_count&lt;/code&gt;: (本字段仅存在于 Big Sur 之前的版本) 用户被提示的次数。如果程序在第一次被拒绝后，仍然不断地申请访问，那么这个字段就会不断地增加。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;auth_value&lt;/code&gt;: (本字段仅存在于 Big Sur 以及之后的版本) 访问权限的值。&lt;code&gt;0&lt;/code&gt; 代表拒绝，&lt;code&gt;1&lt;/code&gt; 代表未知，&lt;code&gt;2&lt;/code&gt; 代表允许，&lt;code&gt;3&lt;/code&gt; 代表有限制。例如，允许应用选择照片，但是不允许它访问整个照片库。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;auth_reason&lt;/code&gt;: (本字段仅存在于 Big Sur 以及之后的版本) 用于描述 &lt;code&gt;auth_value&lt;/code&gt; 是因何理由被设置的。一个常见的值是 &lt;code&gt;3&lt;/code&gt;，代表 &lt;strong&gt;用户设置&lt;/strong&gt;。完整的列表我也放在本文末尾了。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;auth_version&lt;/code&gt;: (本字段仅存在于 Big Sur 以及之后的版本) 默认为 &lt;code&gt;1&lt;/code&gt;，也可能会随着未来的 macOS 版本而改变。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;csreq&lt;/code&gt;: 二进制代码签名要求 blob 必须满足特定的格式，以便获得访问权限。这是用于防止攻击者的欺骗/冒充。我会在下一个章节描述以下如何进行这部分内容的生成和解码。这里真得感谢 Keith Johnson，即便在英文互联网上，可能也就他那条回答真正解释清楚了这个字段。&lt;font color="Orange"&gt;&lt;b&gt;可以简单理解为对 &lt;code&gt;client&lt;/code&gt; 目标进行 &lt;code&gt;csreq&lt;/code&gt; 处理后的 &lt;code&gt;Blob&lt;/code&gt; 值，我会在下一节详细解释。&lt;/b&gt;&lt;/font&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;policy_id&lt;/code&gt;: 这个字段与 MDM(Mobile Device Management) 策略相关，&lt;a href="github.com/carlashley/tccprofile"&gt;carlashley/tccprofile&lt;/a&gt; 可以用于生成这些配置文件。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;indirect_object_identifier&lt;/code&gt;: 用于指定某个服务（例如 &lt;code&gt;kTCCServiceAppleEvents&lt;/code&gt;）的目标客户端。这个字段可以是 Bundle Identifier 或者绝对路径，就像 &lt;code&gt;client&lt;/code&gt; 字段一样。在某些情况下，这个字段会被设置为 &lt;code&gt;UNUSED&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;indirect_object_identifier_type&lt;/code&gt;: 用于指定 &lt;code&gt;indirect_object_identifier&lt;/code&gt; 字段的类型。&lt;code&gt;0&lt;/code&gt; 代表 Bundle Identifier，&lt;code&gt;1&lt;/code&gt; 代表绝对路径。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;indirect_object_code_identity&lt;/code&gt;: 和 &lt;code&gt;csreq&lt;/code&gt; 字段一样，这个字段也是用于防止攻击者的欺骗/冒充。但是这个字段的作用于 &lt;code&gt;indirect_object_identifier&lt;/code&gt; 字段指定的客户端。&lt;font color="Orange"&gt;&lt;b&gt;可以简单理解为对 &lt;code&gt;indirect_object_identifier&lt;/code&gt; 目标进行 &lt;code&gt;csreq&lt;/code&gt; 处理后的 &lt;code&gt;Blob&lt;/code&gt; 值，我会在下一节详细解释。&lt;/b&gt;&lt;/font&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;flags&lt;/code&gt;: 未知作用。值总是为 &lt;code&gt;0&lt;/code&gt;，可能与 MDM 策略一起使用。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;last_modified&lt;/code&gt;: 最后一次修改的时间戳。&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;p&gt;如果你还不知道什么是 &lt;code&gt;Blob&lt;/code&gt;，可以参考 &lt;a href="https://dev.mysql.com/doc/refman/8.0/en/blob.html"&gt;The BLOB and TEXT Types&lt;/a&gt;.&lt;/p&gt;
+        &lt;p&gt;有了这些字段的详细解释，我们就可以读懂甚至构造一条 &lt;code&gt;TCC.db&lt;/code&gt; &lt;code&gt;access&lt;/code&gt; 语句了。当然在开始之前，我们还需要补充一个知识点，就是 &lt;code&gt;csreq&lt;/code&gt;。利用 &lt;code&gt;csreq&lt;/code&gt;，我们可以解码一个二进制代码签名 &lt;code&gt;Blob&lt;/code&gt;，亦或者从零开始构造一个 &lt;code&gt;Blob&lt;/code&gt;。&lt;/p&gt;
+        &lt;h2 id="-csreq-sup-3-https-stackoverflow-com-questions-52706542-how-to-get-csreq-of-macos-application-on-command-line-57259004-57259004-sup-"&gt;&lt;strong&gt;关于 &lt;code&gt;csreq&lt;/code&gt;&lt;sup&gt;&lt;a href="https://stackoverflow.com/questions/52706542/how-to-get-csreq-of-macos-application-on-command-line/57259004#57259004"&gt;[3]&lt;/a&gt;&lt;/sup&gt;&lt;/strong&gt;&lt;/h2&gt;
+        &lt;p&gt;很多人一看到要构造一个 &lt;code&gt;Blob&lt;/code&gt; 第一反应就是慌，事实上我也是一样。&lt;/p&gt;
+        &lt;p&gt;不过我们在插入数据到 &lt;code&gt;TCC.db&lt;/code&gt; 的时候，只需要构造一个满足特定格式的、非常短的 &lt;code&gt;Blob&lt;/code&gt; 即可。这个 &lt;code&gt;Blob&lt;/code&gt; 的格式是由 Apple 的 &lt;code&gt;libsecurity_codesigning&lt;/code&gt; 库定义的，源代码可以在这里找到：&lt;a href="https://github.com/toriningen/apple-security-framework/blob/master/OSX/libsecurity_codesigning/lib/requirement.h"&gt;libsecurity_codesigning/lib/requirement.h&lt;/a&gt;&lt;/p&gt;
+        &lt;p&gt;比较粗略的看了一下，这个头文件定义了一个叫 &lt;code&gt;Requirement&lt;/code&gt; 的类，用于表示苹果的代码签名要求（Code Signing Requirements）。&lt;code&gt;Requirement&lt;/code&gt; 类的成员函数包括用于验证是否合法和满足格式要求的 &lt;code&gt;void validate&lt;/code&gt; 和 &lt;code&gt;bool validates&lt;/code&gt;；还有用于声明格式的 &lt;code&gt;kind&lt;/code&gt; 函数，不过目前唯一支持的表达式的类型是 &lt;code&gt;opExpr&lt;/code&gt;。&lt;/p&gt;
+        &lt;p&gt;不过实际上我们并不需要手动写 &lt;code&gt;csreq&lt;/code&gt; 的生成 &amp;amp; 翻译工具，macOS 本身就自带了一个同名的命令行工具 &lt;code&gt;csreq&lt;/code&gt;。这个工具可以用来生成 &lt;code&gt;Blob&lt;/code&gt;，也可以用来解码符合格式要求的 &lt;code&gt;Blob&lt;/code&gt;。这个工具一个旧版本的源代码在这里：&lt;a href="https://opensource.apple.com/source/security_systemkeychain/security_systemkeychain-55191/src/csreq.cpp.auto.html"&gt;csreq.cpp&lt;/a&gt;。&lt;/p&gt;
+        &lt;p&gt;下面主要来说说怎么用吧。就以 &lt;code&gt;TCC.db&lt;/code&gt; 插入时最常用的一条 &lt;code&gt;Blob&lt;/code&gt; 为例，来看看怎么用 &lt;code&gt;csreq&lt;/code&gt; 来生成和解码这个 &lt;code&gt;Blob&lt;/code&gt;。&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-shell"&gt;&lt;span class="hljs-comment"&gt;# Convert the hex string into a binary blob&lt;/span&gt;
+        &lt;span class="hljs-variable"&gt;$ &lt;/span&gt;BLOB=&lt;span class="hljs-string"&gt;"FADE0C000000003000000001000000060000000200000012636F6D2E6170706C652E5465726D696E616C000000000003"&lt;/span&gt;
+        &lt;span class="hljs-variable"&gt;$ &lt;/span&gt;echo &lt;span class="hljs-string"&gt;"$BLOB"&lt;/span&gt; | xxd -r -p &amp;gt; terminal-csreq.bin
+        
+        &lt;span class="hljs-comment"&gt;# Ask csreq to tell us what it means&lt;/span&gt;
+        &lt;span class="hljs-variable"&gt;$ &lt;/span&gt;csreq -r- -t &amp;lt; terminal-csreq.bin
+        identifier &lt;span class="hljs-string"&gt;"com.apple.Terminal"&lt;/span&gt; &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; anchor apple
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;p&gt;从解码的结果来看，这条 &lt;code&gt;Blob&lt;/code&gt; 代表了一个通过苹果官方签名的 &lt;code&gt;com.apple.Terminal&lt;/code&gt; 对象。&lt;/p&gt;
+        &lt;p&gt;那这条信息 &lt;code&gt;identifier "com.apple.Terminal" and anchor apple&lt;/code&gt; 本身是怎么来的呢？或者说，我们应该怎么写这条原始文本，并确认其符合 &lt;code&gt;Blob&lt;/code&gt; 的解析原文的格式要求呢？其实也很简单，使用另一个命令行工具 &lt;code&gt;codesign&lt;/code&gt; 就可以获得任意已签名对象的 &lt;code&gt;designated&lt;/code&gt; 字段，也就是 &lt;code&gt;Blob&lt;/code&gt; 的合法描述原文：&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-shell"&gt;$ codesign -d -r- /Applications/Utilities/Terminal.app
+        Executable=/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal
+        designated =&amp;gt; identifier &lt;span class="hljs-string"&gt;"com.apple.Terminal"&lt;/span&gt; and &lt;span class="hljs-built_in"&gt;anchor&lt;/span&gt; apple
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;p&gt;这里再举一个类似的例子，也就是游戏开发团队非常常用的 P4V 客户端，这玩意儿的 &lt;code&gt;Blob&lt;/code&gt; 是：&lt;/p&gt;
+        &lt;pre&gt;&lt;code&gt;fade0c000000009c00000001000000060000000600000006000000060000000200000010636f6d2e706572666f7263652e7034760000000f0000000e000000010000000a2a864886f763640602060000000000000000000e000000000000000a2a864886f7636406010d0000000000000000000b000000000000000a7375626a6563742e4f550000000000010000000a5059594653593&lt;span class="hljs-number"&gt;53453370000&lt;/span&gt;
+        &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;我们来依样画葫芦地解码一下：&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-shell"&gt;# Convert the hex string &lt;span class="hljs-keyword"&gt;into&lt;/span&gt; a binary blob
+        BLOB=&lt;span class="hljs-string"&gt;"fade0c000000009c00000001000000060000000600000006000000060000000200000010636f6d2e706572666f7263652e7034760000000f0000000e000000010000000a2a864886f763640602060000000000000000000e000000000000000a2a864886f7636406010d0000000000000000000b000000000000000a7375626a6563742e4f550000000000010000000a505959465359353453370000"&lt;/span&gt;
+        echo &lt;span class="hljs-string"&gt;"$BLOB"&lt;/span&gt; | xxd -r -p &amp;gt; p4v-csreq.bin
+        
+        # Ask csreq to tell us what it means
+        $ csreq -r- -t &amp;lt; p4v-csreq.bin
+        identifier &lt;span class="hljs-string"&gt;"com.perforce.p4v"&lt;/span&gt; &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; anchor apple generic &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; certificate &lt;span class="hljs-number"&gt;1&lt;/span&gt;[field&lt;span class="hljs-meta"&gt;.1&lt;/span&gt;&lt;span class="hljs-meta"&gt;.2&lt;/span&gt;&lt;span class="hljs-meta"&gt;.840&lt;/span&gt;&lt;span class="hljs-meta"&gt;.113635&lt;/span&gt;&lt;span class="hljs-meta"&gt;.100&lt;/span&gt;&lt;span class="hljs-meta"&gt;.6&lt;/span&gt;&lt;span class="hljs-meta"&gt;.2&lt;/span&gt;&lt;span class="hljs-meta"&gt;.6&lt;/span&gt;] /* exists */ &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; certificate leaf[field&lt;span class="hljs-meta"&gt;.1&lt;/span&gt;&lt;span class="hljs-meta"&gt;.2&lt;/span&gt;&lt;span class="hljs-meta"&gt;.840&lt;/span&gt;&lt;span class="hljs-meta"&gt;.113635&lt;/span&gt;&lt;span class="hljs-meta"&gt;.100&lt;/span&gt;&lt;span class="hljs-meta"&gt;.6&lt;/span&gt;&lt;span class="hljs-meta"&gt;.1&lt;/span&gt;&lt;span class="hljs-meta"&gt;.13&lt;/span&gt;] /* exists */ &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; certificate leaf[subject.OU] = PYYFSY54S7
+        
+        # ask codesign what the requirement text from the application itself is
+        $ codesign -d -r- /Applications/p4v.app
+        Executable=/Applications/p4v.app/Contents/MacOS/p4v
+        designated =&amp;gt; identifier &lt;span class="hljs-string"&gt;"com.perforce.p4v"&lt;/span&gt; &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; anchor apple generic &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; certificate &lt;span class="hljs-number"&gt;1&lt;/span&gt;[field&lt;span class="hljs-meta"&gt;.1&lt;/span&gt;&lt;span class="hljs-meta"&gt;.2&lt;/span&gt;&lt;span class="hljs-meta"&gt;.840&lt;/span&gt;&lt;span class="hljs-meta"&gt;.113635&lt;/span&gt;&lt;span class="hljs-meta"&gt;.100&lt;/span&gt;&lt;span class="hljs-meta"&gt;.6&lt;/span&gt;&lt;span class="hljs-meta"&gt;.2&lt;/span&gt;&lt;span class="hljs-meta"&gt;.6&lt;/span&gt;] /* exists */ &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; certificate leaf[field&lt;span class="hljs-meta"&gt;.1&lt;/span&gt;&lt;span class="hljs-meta"&gt;.2&lt;/span&gt;&lt;span class="hljs-meta"&gt;.840&lt;/span&gt;&lt;span class="hljs-meta"&gt;.113635&lt;/span&gt;&lt;span class="hljs-meta"&gt;.100&lt;/span&gt;&lt;span class="hljs-meta"&gt;.6&lt;/span&gt;&lt;span class="hljs-meta"&gt;.1&lt;/span&gt;&lt;span class="hljs-meta"&gt;.13&lt;/span&gt;] /* exists */ &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; certificate leaf[subject.OU] = PYYFSY54S7
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;p&gt;可以看到，就是这样简单的处理，就能获得任意对象合法的 &lt;code&gt;Blob&lt;/code&gt; 描述原文。&lt;/p&gt;
+        &lt;p&gt;那么第二个问题来了，既然可以通过 &lt;code&gt;codesign&lt;/code&gt; 来获得 &lt;code&gt;Blob&lt;/code&gt; 的描述原文，那么我们应该如何获得 &lt;code&gt;Blob&lt;/code&gt; 本身呢？这个问题其实也很简单，只要把 &lt;code&gt;Blob&lt;/code&gt; 的描述原文通过 &lt;code&gt;csreq&lt;/code&gt; 转换成二进制格式即可。&lt;/p&gt;
+        &lt;p&gt;这里我们继续用 &lt;code&gt;p4v.app&lt;/code&gt; 为例：&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-shell"&gt;&lt;span class="hljs-comment"&gt;# Get the requirement string from codesign&lt;/span&gt;
+        &lt;span class="hljs-variable"&gt;$ &lt;/span&gt;REQ_STR=&lt;span class="hljs-variable"&gt;$(&lt;/span&gt;codesign -d -r- &lt;span class="hljs-regexp"&gt;/Applications/p&lt;/span&gt;4v.app/ &lt;span class="hljs-number"&gt;2&lt;/span&gt;&amp;gt;&amp;amp;&lt;span class="hljs-number"&gt;1&lt;/span&gt; | awk -F &lt;span class="hljs-string"&gt;' =&amp;gt; '&lt;/span&gt; &lt;span class="hljs-string"&gt;'/designated/{print $2}'&lt;/span&gt;)
+        
+        &lt;span class="hljs-comment"&gt;# Convert the requirements string into it's binary representation(sadly it seems csreq requires the output to be a file; so we just throw it in /tmp)&lt;/span&gt;
+        &lt;span class="hljs-variable"&gt;$ &lt;/span&gt;echo &lt;span class="hljs-string"&gt;"$REQ_STR"&lt;/span&gt; | csreq -r- -b /tmp/csreq.bin
+        
+        &lt;span class="hljs-comment"&gt;# Convert the binary form to hex, and print it nicely for use in sqlite&lt;/span&gt;
+        &lt;span class="hljs-variable"&gt;$ &lt;/span&gt;REQ_HEX=&lt;span class="hljs-variable"&gt;$(&lt;/span&gt;xxd -p /tmp/csreq.bin  | tr -d &lt;span class="hljs-string"&gt;'\n'&lt;/span&gt;)
+        &lt;span class="hljs-variable"&gt;$ &lt;/span&gt;echo &lt;span class="hljs-string"&gt;"X'$REQ_HEX'"&lt;/span&gt;
+        X&lt;span class="hljs-string"&gt;'fade0c000000009c00000001000000060000000600000006000000060000000200000010636f6d2e706572666f7263652e7034760000000f0000000e000000010000000a2a864886f763640602060000000000000000000e000000000000000a2a864886f7636406010d0000000000000000000b000000000000000a7375626a6563742e4f550000000000010000000a505959465359353453370000'&lt;/span&gt;
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;p&gt;如你所见，刚才的 &lt;code&gt;Blob&lt;/code&gt; 描述原文，就这样简单的获取到了。看到这一步的你，应该已经有能力自由地获得任意目标的 &lt;code&gt;Blob&lt;/code&gt; 描述原文，并将其转换成 &lt;code&gt;Blob&lt;/code&gt; 本身。&lt;/p&gt;
+        &lt;h2 id="-tcc-db-access-"&gt;&lt;strong&gt;动手构造一条 &lt;code&gt;TCC.db&lt;/code&gt; &lt;code&gt;access&lt;/code&gt; 语句&lt;/strong&gt;&lt;/h2&gt;
+        &lt;p&gt;既然万事具备，说再多不如动手构造一条 &lt;code&gt;TCC.db&lt;/code&gt; 的插入语句来得记忆深刻。&lt;/p&gt;
+        &lt;p&gt;这里我们以 &lt;code&gt;kTCCServiceAppleEvents&lt;/code&gt; 服务为例，构造一个允许 &lt;code&gt;/usr/bin/env&lt;/code&gt; 通过 &lt;code&gt;AppleEvents&lt;/code&gt; 服务访问 &lt;code&gt;/System/Library/CoreServices/System Events.app&lt;/code&gt; 的 &lt;code&gt;access&lt;/code&gt; 表的插入语句。&lt;/p&gt;
+        &lt;p&gt;这个插入语句的作用呢，一般来说是用来帮助 &lt;code&gt;osascript&lt;/code&gt; 命令在执行 Apple Script 的时候，强制跳过一些用户 GUI 层的确认对话框，从而达到&lt;strong&gt;静默&lt;/strong&gt;执行 Login Items 的目的。在类似 JAMF Pro 这样的企业级管理软件中，有不少类似的骚操作。&lt;/p&gt;
+        &lt;p&gt;好，我们开始。&lt;/p&gt;
+        &lt;ul&gt;
+        &lt;li&gt;首先是 &lt;code&gt;service&lt;/code&gt; 字段，这个字段的值是 &lt;code&gt;kTCCServiceAppleEvents&lt;/code&gt;，是我们的目标服务，也就是用于跳过一些强制行的用户确认 Prompts 的服务对象。&lt;font color="Orange"&gt;&lt;b&gt;下一节为参考表&lt;/b&gt;&lt;/font&gt;&lt;/li&gt;
+        &lt;li&gt;然后是 &lt;code&gt;client&lt;/code&gt; 字段，这个字段的值是 &lt;code&gt;/usr/bin/env&lt;/code&gt;，这个是我们的目标客户端，也就是我们要让它通过 &lt;code&gt;kTCCServiceAppleEvents&lt;/code&gt; 服务访问 &lt;code&gt;/System/Applications/System Preferences.app&lt;/code&gt; 的客户端。这里无论是 &lt;code&gt;/usr/bin/env&lt;/code&gt; 还是其对应的 &lt;code&gt;identifier&lt;/code&gt;，都是可以的，所以也可以写成 &lt;code&gt;com.apple.env&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;client_type&lt;/code&gt; 字段，如果你 &lt;code&gt;client&lt;/code&gt; 填的是 &lt;code&gt;/usr/bin/env&lt;/code&gt;，也就是绝对路径，那就这个字段的值是 &lt;code&gt;1&lt;/code&gt;；如果填的是 &lt;code&gt;com.apple.env&lt;/code&gt;，也就是 &lt;code&gt;identifier&lt;/code&gt;，那就这个字段的值是 &lt;code&gt;0&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;auth_value&lt;/code&gt; 字段，那肯定是允许嘛。所以这个字段的值是 &lt;code&gt;2&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;auth_reason&lt;/code&gt; 字段，这个字段的值是 &lt;code&gt;3&lt;/code&gt;，也就是 &lt;code&gt;User Set&lt;/code&gt;。表示是用户自己设置的（笑）。&lt;font color="Orange"&gt;&lt;b&gt;下一节为参考表&lt;/b&gt;&lt;/font&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;auth_version&lt;/code&gt; 字段，默认就是 &lt;code&gt;1&lt;/code&gt;。别问，别管。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;csreq&lt;/code&gt; 字段，这个字段就是对 &lt;code&gt;/usr/bin/env&lt;/code&gt; 的 &lt;code&gt;Blob&lt;/code&gt; 描述原文的二进制表示。&lt;font color="Orange"&gt;&lt;b&gt;构造方法上面一节已经说的清清楚楚了。&lt;/b&gt;&lt;/font&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;policy_id&lt;/code&gt; 字段，我们暂时用不到，设置为 &lt;code&gt;NULL&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;indirect_object_identifier_type&lt;/code&gt; 也就是被访问对象的类型，这里是 &lt;code&gt;0&lt;/code&gt;，也就是 &lt;code&gt;identifier&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;indirect_object_identifier&lt;/code&gt; 字段，这个字段的值是 &lt;code&gt;/System/Library/CoreServices/System Events.app/&lt;/code&gt; 的 &lt;code&gt;identifier&lt;/code&gt;，也就是 &lt;code&gt;com.apple.systemevents&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;indirect_object_code_identity&lt;/code&gt; 字段，这个字段的值是 &lt;code&gt;/System/Library/CoreServices/System Events.app/&lt;/code&gt; 的 &lt;code&gt;Blob&lt;/code&gt; 二进制表示。&lt;font color="Orange"&gt;&lt;b&gt;构造方法也是参考上一节。&lt;/b&gt;&lt;/font&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;flags&lt;/code&gt; 字段，我们暂时用不到，设置为 &lt;code&gt;NULL&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;last_modified&lt;/code&gt; 字段，这个字段的值只要是合法的时间戳就行，我自己一般喜欢用 &lt;code&gt;2022-01-01 00:00:00&lt;/code&gt;，也就是 &lt;code&gt;1642634565&lt;/code&gt;。&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;p&gt;那么现在，我们的插入语句已经全部完成了，写出来就是这么个样子：&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-sql"&gt;&lt;span class="hljs-keyword"&gt;INSERT&lt;/span&gt; &lt;span class="hljs-keyword"&gt;INTO&lt;/span&gt; &lt;span class="hljs-keyword"&gt;access&lt;/span&gt; &lt;span class="hljs-keyword"&gt;VALUES&lt;/span&gt;(
+            &lt;span class="hljs-string"&gt;'kTCCServiceAppleEvents'&lt;/span&gt;,   &lt;span class="hljs-comment"&gt;-- service&lt;/span&gt;
+            &lt;span class="hljs-string"&gt;'/usr/bin/env'&lt;/span&gt;,                &lt;span class="hljs-comment"&gt;-- client&lt;/span&gt;
+            &lt;span class="hljs-number"&gt;1&lt;/span&gt;,                          &lt;span class="hljs-comment"&gt;-- client_type&lt;/span&gt;
+            &lt;span class="hljs-number"&gt;2&lt;/span&gt;,                          &lt;span class="hljs-comment"&gt;-- auth_value&lt;/span&gt;
+            &lt;span class="hljs-number"&gt;3&lt;/span&gt;,                          &lt;span class="hljs-comment"&gt;-- auth_reason&lt;/span&gt;
+            &lt;span class="hljs-number"&gt;1&lt;/span&gt;，                         &lt;span class="hljs-comment"&gt;-- auth_version&lt;/span&gt;
+            &lt;span class="hljs-comment"&gt;-- csreq&lt;/span&gt;
+            X&lt;span class="hljs-string"&gt;'fade0c000000002c0000000100000006000000020000000d636f6d2e6170706c652e656e7600000000000003'&lt;/span&gt;,
+            &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,                       &lt;span class="hljs-comment"&gt;-- policy_id&lt;/span&gt;
+            &lt;span class="hljs-number"&gt;0&lt;/span&gt;,                          &lt;span class="hljs-comment"&gt;-- indirect_object_identifier_type&lt;/span&gt;
+            &lt;span class="hljs-string"&gt;'com.apple.systemevents'&lt;/span&gt;,   &lt;span class="hljs-comment"&gt;-- indirect_object_identifier&lt;/span&gt;
+            &lt;span class="hljs-comment"&gt;-- indirect_object_code_identity&lt;/span&gt;
+            X&lt;span class="hljs-string"&gt;'fade0c000000003400000001000000060000000200000016636f6d2e6170706c652e73797374656d6576656e7473000000000003'&lt;/span&gt;,
+            &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,                       &lt;span class="hljs-comment"&gt;-- flags&lt;/span&gt;
+            &lt;span class="hljs-number"&gt;1642634565&lt;/span&gt;                  &lt;span class="hljs-comment"&gt;-- last_modified&lt;/span&gt;
+        );
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;p&gt;之后我们就可以用 &lt;code&gt;sqlite3&lt;/code&gt; 命令行工具，或者 &lt;code&gt;DB Browser for SQLite&lt;/code&gt; 这样的 GUI 工具，将这条语句插入到 &lt;code&gt;TCC.db&lt;/code&gt; 中了。&lt;/p&gt;
+        &lt;p&gt;然后，你就可以通过构造一个 &lt;code&gt;plist&lt;/code&gt; 文件和 &lt;code&gt;launchctl&lt;/code&gt; 命令，给用户加载一些 Login Items，例如更换壁纸、更换 Dock 图标、更换桌面图标等等，而不需要经过用户在 GUI 的窗口确认了。&lt;/p&gt;
+        &lt;p&gt;以下为一个简单的 plist 文件示例：&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-xml"&gt;&lt;span class="xml"&gt;&lt;span class="php"&gt;&lt;span class="hljs-meta"&gt;&amp;lt;?&lt;/span&gt;xml version=&lt;span class="hljs-string"&gt;"1.0"&lt;/span&gt; encoding=&lt;span class="hljs-string"&gt;"UTF-8"&lt;/span&gt;&lt;span class="hljs-meta"&gt;?&amp;gt;&lt;/span&gt;&lt;/span&gt;
+        &lt;span class="hljs-meta"&gt;&amp;lt;!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"&amp;gt;&lt;/span&gt;
+        &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;plist&lt;/span&gt; &lt;span class="hljs-attr"&gt;version&lt;/span&gt;=&lt;span class="hljs-string"&gt;"1.0"&lt;/span&gt;&amp;gt;&lt;/span&gt;
+        &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;dict&lt;/span&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;key&lt;/span&gt;&amp;gt;&lt;/span&gt;Label&lt;span class="hljs-tag"&gt;&amp;lt;/&lt;span class="hljs-name"&gt;key&lt;/span&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;string&lt;/span&gt;&amp;gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="hljs-template-variable"&gt;{{ plist_name }}&lt;/span&gt;&lt;span class="xml"&gt;&lt;span class="hljs-tag"&gt;&amp;lt;/&lt;span class="hljs-name"&gt;string&lt;/span&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;key&lt;/span&gt;&amp;gt;&lt;/span&gt;Program&lt;span class="hljs-tag"&gt;&amp;lt;/&lt;span class="hljs-name"&gt;key&lt;/span&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;string&lt;/span&gt;&amp;gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="hljs-template-variable"&gt;{{ apple_script_path }}&lt;/span&gt;&lt;span class="xml"&gt;&lt;span class="hljs-tag"&gt;&amp;lt;/&lt;span class="hljs-name"&gt;string&lt;/span&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;key&lt;/span&gt;&amp;gt;&lt;/span&gt;RunAtLoad&lt;span class="hljs-tag"&gt;&amp;lt;/&lt;span class="hljs-name"&gt;key&lt;/span&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;true&lt;/span&gt;/&amp;gt;&lt;/span&gt;
+        &lt;span class="hljs-tag"&gt;&amp;lt;/&lt;span class="hljs-name"&gt;dict&lt;/span&gt;&amp;gt;&lt;/span&gt;
+        &lt;span class="hljs-tag"&gt;&amp;lt;/&lt;span class="hljs-name"&gt;plist&lt;/span&gt;&amp;gt;&lt;/span&gt;&lt;/span&gt;
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;p&gt;&lt;font color="Orange"&gt;&lt;b&gt;吐槽&lt;/b&gt;&lt;/font&gt;：明明非常正常的设备和系统管理操作，非要被苹果弄得像是黑客入侵操作一样。真有你的，库克。&lt;/p&gt;
+        &lt;h2 id="-service-auth_reason-sup-2-https-www-rainforestqa-com-blog-macos-tcc-db-deep-dive-sup-"&gt;&lt;strong&gt;&lt;code&gt;Service&lt;/code&gt; &amp;amp; &lt;code&gt;Auth_Reason&lt;/code&gt; 参考表&lt;sup&gt;&lt;a href="https://www.rainforestqa.com/blog/macos-tcc-db-deep-dive"&gt;[2]&lt;/a&gt;&lt;/sup&gt;&lt;/strong&gt;&lt;/h2&gt;
+        &lt;p&gt;&lt;br&gt;&lt;/p&gt;
+        &lt;details style="box-shadow: 2px 2px 5px; border-radius: 6px; padding: .5em .5em .5em;"&gt;
+            &lt;summary&gt;&lt;b&gt;SERVICE List&lt;/b&gt;&lt;/summary&gt;
+            &lt;br&gt;
+            &lt;table border="1"&gt;
+                &lt;tbody&gt;&lt;tr&gt; &lt;th&gt;&lt;b&gt;Value&lt;/b&gt;&lt;/th&gt; &lt;th&gt;&lt;b&gt;Description&lt;/b&gt;&lt;/th&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceAddressBook&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access your contacts.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceAppleEvents&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client wants access to control indirect_object. Allowing control will provide access to documents and       data in indirect_object, and to perform actions within that app.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceBluetoothAlways&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to use Bluetooth.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceCalendar&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access your calendar.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceCamera&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access the camera.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceContactsFull&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access all of your contacts information.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceContactsLimited&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access your contacts basic information.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceFileProviderDomain&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client wants to access files managed by indirect_object.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceFileProviderPresence&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Do you want to allow client to see when you are using files managed by it? It will see which applications are used to access files and whether you are actively using them. It will not see when files that are not managed by it are accessed.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceLocation&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to use your current location.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceMediaLibrary&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access Apple Music, your music and video activity, and your media library.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceMicrophone&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access the microphone.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceMotion&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client Would Like to Access Your Motion &amp;amp; Fitness Activity.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServicePhotos&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client Would Like to Access Your Photos&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServicePhotosAdd&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client Would Like to Add to your Photos&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServicePrototype3Rights&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client Would Like Authorization to Test Service Proto3Right.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServicePrototype4Rights&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client Would Like Authorization to Test Service Proto4Right.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceReminders&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access your reminders.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceScreenCapture&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to capture the contents of the system display.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSiri&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Would You Like to Use client with Siri?&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSpeechRecognition&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client Would Like to Access Speech Recognition.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicyDesktopFolder&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access files in your Desktop folder.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicyDeveloperFiles&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access a file used in Software Development.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicyDocumentsFolder&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access files in your Documents folder.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicyDownloadsFolder&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access files in your Downloads folder.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicyNetworkVolumes&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access files on a network volume.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicyRemovableVolumes&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access files on a removable volume.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicySysAdminFiles&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to administer your computer. Administration can include modifying passwords, networking, and system settings.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceWillow&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access your Home data.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicyAllFiles&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Full Disk Access&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceAccessibility&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Allows app to control your computer&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServicePostEvent&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Allows to send keystrokes&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceListenEvent&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Input Monitoring; to monitor input from your keyboard&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceDeveloperTool&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Allows app to run software locally that do not meet the system’s security policy&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceLiverpool&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Related to location services&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceUbiquity&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Related to iCloud&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceShareKit&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Related to the share feature(presumably from iOS)(ShareKit)&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceLinkedIn&lt;/b&gt;&lt;/td&gt; &lt;td&gt;LinkedIn&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceTwitter&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Twitter&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceFacebook&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Facebook&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSinaWeibo&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Sina Weibo&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceTencentWeibo&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Tencent Weibo&lt;/td&gt; &lt;/tr&gt;
+            &lt;/tbody&gt;&lt;/table&gt;
+        &lt;/details&gt;
+        ‍
+        &lt;br&gt;
+        &lt;details style="box-shadow: 2px 2px 5px; border-radius: 6px; padding: .5em .5em .5em;"&gt;
+            &lt;summary&gt;&lt;b&gt;AUTH_REASON List&lt;/b&gt;&lt;/summary&gt;
+            &lt;br&gt;
+            &lt;table border="1"&gt;
+                &lt;tbody&gt;&lt;tr&gt; &lt;th&gt;&lt;b&gt;Value&lt;/b&gt;&lt;/th&gt; &lt;th&gt;&lt;b&gt;Description&lt;/b&gt;&lt;/th&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;1&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Error&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;2&lt;/b&gt;&lt;/td&gt; &lt;td&gt;User Consent&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;3&lt;/b&gt;&lt;/td&gt; &lt;td&gt;User Set&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;4&lt;/b&gt;&lt;/td&gt; &lt;td&gt;System Set&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;5&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Service Policy&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;6&lt;/b&gt;&lt;/td&gt; &lt;td&gt;MDM Policy&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;7&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Override Policy&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;8&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Missing usage string&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;9&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Prompt Timeout&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;10&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Preflight Unknown&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;11&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Entitled&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;12&lt;/b&gt;&lt;/td&gt; &lt;td&gt;App Type Policy&lt;/td&gt; &lt;/tr&gt;
+            &lt;/tbody&gt;&lt;/table&gt;
+        &lt;/details&gt;
+        
+        &lt;p&gt;&lt;br&gt;&lt;/p&gt;
+        &lt;h2 id="-"&gt;&lt;strong&gt;相关文献&lt;/strong&gt;&lt;/h2&gt;
+        &lt;ol&gt;
+        &lt;li&gt;&lt;em&gt;&lt;a href="https://www.slideshare.net/CsabaFitzl/20-ways-to-bypass-your-mac-os-privacy-mechanisms"&gt;20+ ways to bypass your mac os privacy mechanisms -- Csaba Fitzl&lt;/a&gt;&lt;/em&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;em&gt;&lt;a href="https://www.rainforestqa.com/blog/macos-tcc-db-deep-dive"&gt;A deep dive into macOS TCC.db -- Keith Johnson&lt;/a&gt;&lt;/em&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;em&gt;&lt;a href="https://stackoverflow.com/questions/52706542/how-to-get-csreq-of-macos-application-on-command-line/57259004#57259004"&gt;How to get csreq of macOS application on command line? -- Keith Johnson&lt;/a&gt;&lt;/em&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;em&gt;&lt;a href="https://objective-see.org/blog/blog_0x4C.html"&gt;CVE-2020–9934&lt;/a&gt;&lt;/em&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;em&gt;&lt;a href="https://nvd.nist.gov/vuln/detail/CVE-2021-1784"&gt;CVE-2021-1784&lt;/a&gt;&lt;/em&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;em&gt;&lt;a href="https://theevilbit.github.io/posts/cve_2021_30920/"&gt;CVE-2021-30920&lt;/a&gt;&lt;/em&gt;&lt;/li&gt;
+        &lt;/ol&gt;
+             
+        &lt;!-- Post Content Ends Here --&gt;
+      &lt;/div&gt;
+      &lt;div class="footer"&gt;
+      &lt;p&gt;&lt;a href="https://creativecommons.org/licenses/by/4.0/" target="_blank"&gt;CC 4.0&lt;/a&gt;
+        &lt;br&gt;
+        © 1995-&lt;script type="text/javascript"&gt;document.write((new Date()).getFullYear());&lt;/script&gt;
+        Kivinsae Fang
+        &lt;br&gt;
+        Powered by Raw HTML
+      &lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  
+
+&lt;/body&gt;</content></entry><entry><title>TCC 数据库：开发者的噩梦，攻击者的狂欢</title><link href="http://www.kivinsae.com/posts/2023-03-25-tcc_db.html" /><content type="html">&lt;head&gt;
+    &lt;/head&gt;&lt;body&gt;&lt;nav&gt;
+      &lt;ul&gt;
+        &lt;li&gt;&lt;a href="../index.html"&gt;Home&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href="../archives.html"&gt;Archives&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href="../categories.html"&gt;Categories&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href="../friends.html"&gt;Friends&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href="../about.html"&gt;About&lt;/a&gt;&lt;/li&gt;
+      &lt;/ul&gt;
+    &lt;/nav&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;title&gt;TCC 数据库：开发者的噩梦，攻击者的狂欢&lt;/title&gt;
+    &lt;link rel="stylesheet" href="../styles/style.css"&gt;
+    &lt;link rel="stylesheet" href="../styles/prism-tomorrow.css"&gt;
+  
+  
+    &lt;script src="../styles/prism-tomorrow.js"&gt;&lt;/script&gt;
+    &lt;div class="container"&gt;
+      &lt;div class="header"&gt;
+        &lt;h1&gt;TCC 数据库：开发者的噩梦，攻击者的狂欢&lt;/h1&gt;
+      &lt;/div&gt;
+      &lt;div class="post"&gt;
+        &lt;!-- Post Content Starts Here --&gt;
+        &lt;font color="Orange"&gt;&lt;b&gt;苹果，我完全无法理解你&lt;/b&gt;&lt;/font&gt;
+
+        &lt;h2 id="-"&gt;&lt;strong&gt;前言&lt;/strong&gt;&lt;/h2&gt;
+        &lt;p&gt;最近几周，我花了不少时间在 macOS 的自动化流程以及 MDM (Mobile Device Management) 的开发上。&lt;/p&gt;
+        &lt;p&gt;事实上我一直以来都难以理解为什么有那么多企业选择使用 macOS 作为员工的工作电脑。&lt;/p&gt;
+        &lt;p&gt;姑且可以认为多数的科技公司从业者都具备一些必要的计算机常识和命令行技能，但是 macOS 本身其实是基于 XNU 内核构建的 Darwin ，而 Darwin 本身又包含了大量来自 BSD 的特性，这些特性意味着用户在深入使用的时候，往往不得不面对一些在 BSD 和 Linux 中同名同姓却完全不同的命令，例如 &lt;code&gt;mount&lt;/code&gt;。&lt;/p&gt;
+        &lt;p&gt;而更加好死不死的是，Apple 还额外贴心地从 macOS 10.11 开始加入了 &lt;code&gt;SIP (System Integrity Protection)&lt;/code&gt;，也就是著名的&lt;font color="DarkOrchid"&gt;&lt;b&gt;苹果是你的爸爸&lt;/b&gt;&lt;/font&gt;组件。&lt;/p&gt;
+        &lt;p&gt;这意味着无论你是卑微的个人设备还是财大气粗的企业采购设备，都要面临你的 root 不是真正的 root 这样的糟糕体验。而更加搞笑的是，有时候 SIP 不但没有真正保护用户安全，还接二连三的爆出涉及 &lt;code&gt;TCC.db&lt;/code&gt; 的各种权限漏洞，给黑客大开便捷之门。有时候真觉得 macOS 上开发工作流太噩梦了。&lt;/p&gt;
+        &lt;p&gt;本篇我就稍微聊一聊 &lt;code&gt;TCC.db&lt;/code&gt; 这个数据库。&lt;/p&gt;
+        &lt;h2 id="-tcc-transparency-consent-and-control-"&gt;&lt;strong&gt;TCC - Transparency, Consent, and Control&lt;/strong&gt;&lt;/h2&gt;
+        &lt;p&gt;&lt;code&gt;TCC.db&lt;/code&gt; 是 macOS 10.9 之后引入的一个数据库，用于记录用户对于各种系统服务的授权情况。系统级 &lt;code&gt;TCC.db&lt;/code&gt; 的完整路径是 &lt;code&gt;/Library/Application Support/com.apple.TCC/TCC.db&lt;/code&gt;。而对于每一个单独的用户，其实还有一个 &lt;code&gt;TCC.db&lt;/code&gt;，位于 &lt;code&gt;$HOME/Library/Application Support/com.apple.TCC/TCC.db&lt;/code&gt;。&lt;/p&gt;
+        &lt;p&gt;这个数据库的结构非常简单，只有 6 个表：&lt;/p&gt;
+        &lt;ul&gt;
+        &lt;li&gt;&lt;code&gt;access&lt;/code&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;active_policy&lt;/code&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;expired&lt;/code&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;access_overrides&lt;/code&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;admin&lt;/code&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;policies&lt;/code&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;p&gt;事实上这 6 个表里，在默认情况下有且只有 &lt;code&gt;access&lt;/code&gt; 这一个表是有有效数据的。其他的表利用 sqlite3 查看的话可以发现都是空表，而 &lt;code&gt;admin&lt;/code&gt; 表也仅有一行：&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-shell"&gt;sqlite3 "./Library/Application Support/com.apple.TCC/TCC.db" "&lt;span class="hljs-keyword"&gt;select&lt;/span&gt; * &lt;span class="hljs-keyword"&gt;from&lt;/span&gt; access_overrides;"
+        sqlite3 "./Library/Application Support/com.apple.TCC/TCC.db" "&lt;span class="hljs-keyword"&gt;select&lt;/span&gt; * &lt;span class="hljs-keyword"&gt;from&lt;/span&gt; active_policy;"
+        sqlite3 "./Library/Application Support/com.apple.TCC/TCC.db" "&lt;span class="hljs-keyword"&gt;select&lt;/span&gt; * &lt;span class="hljs-keyword"&gt;from&lt;/span&gt; expired;"
+        sqlite3 "./Library/Application Support/com.apple.TCC/TCC.db" "&lt;span class="hljs-keyword"&gt;select&lt;/span&gt; * &lt;span class="hljs-keyword"&gt;from&lt;/span&gt; policies;"
+        sqlite3 "./Library/Application Support/com.apple.TCC/TCC.db" "&lt;span class="hljs-keyword"&gt;select&lt;/span&gt; * &lt;span class="hljs-keyword"&gt;from&lt;/span&gt; &lt;span class="hljs-keyword"&gt;admin&lt;/span&gt;;"
+        version|20
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;font color="DimGrey"&gt;&lt;strong&gt;PS&lt;/strong&gt;: 无端推测，iOS 的权限实现大概率也是基于类似的机制。&lt;/font&gt;
+        
+        &lt;p&gt;然而这一切对开发者友善的前提是，macOS 需要在 Darwin 的命令行支持或系统开发接口中，也复刻一套这样的授权机制。然而事实上是，macOS 没有做到这一点，也似乎并不打算做好这些支持。&lt;/p&gt;
+        &lt;p&gt;稍微对 SIP 有所接触的人应该会很容易察觉到，苹果对于&lt;b&gt;&lt;i&gt;用户可以在自己的机器上可以做什么&lt;/i&gt;&lt;/b&gt;这件事情上，做了非常多的限制。在最近的几个版本的 macOS 中，对于所有系统相关的目录，无论用户本身是否是 Administrator，都仅能做只读操作；即便用户通过 &lt;code&gt;sudo su&lt;/code&gt; 提权到 root，也无法对这些目录进行任何的写操作。&lt;/p&gt;
+        &lt;p&gt;然而 macOS 就仿佛脑子神经搭错了一样，把 &lt;code&gt;TCC.db&lt;/code&gt; 放在了一个普通用户可以进行读写的位置。这就留下隐患了。&lt;/p&gt;
+        &lt;p&gt;当然，macOS 在正常情况下对 &lt;code&gt;TCC.db&lt;/code&gt; 还是进行了许多的保护，但是在过去的几年中，这些保护可以被二十多种方法&lt;sup&gt;&lt;a href="https://www.slideshare.net/CsabaFitzl/20-ways-to-bypass-your-mac-os-privacy-mechanisms"&gt;[1]&lt;/a&gt;&lt;/sup&gt;绕过，TCC 提权漏洞在几乎每一个版本的 macOS 中都有出现。这些方法包括且不限于：&lt;/p&gt;
+        &lt;ul&gt;
+        &lt;li&gt;插件注入&lt;/li&gt;
+        &lt;li&gt;进程注入&lt;sup&gt;&lt;a href="https://objective-see.org/blog/blog_0x4C.html"&gt;[4]&lt;/a&gt;&lt;/sup&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;/Library&lt;/code&gt; &amp;amp; &lt;code&gt;$HOME&lt;/code&gt; 挂载 &lt;sup&gt;&lt;a href="https://nvd.nist.gov/vuln/detail/CVE-2021-1784"&gt;[5]&lt;/a&gt;, &lt;a href="https://theevilbit.github.io/posts/cve_2021_30920/"&gt;[6]&lt;/a&gt;&lt;/sup&gt;&lt;/li&gt;
+        &lt;li&gt;App 行为漏洞利用&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;/usr/bin/grep&lt;/code&gt; 注入&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;p&gt;这样就呈现出了一个非常怪异的状态。macOS 在每一个版本里都留下了方便攻击者的 TCC 提权方式，却对有着 Administrator 权限的用户进行了严格的命令行指令的限制。举几个例子，以下操作就必须通过往 &lt;code&gt;TCC.db&lt;/code&gt; 中写入数据来实现：&lt;/p&gt;
+        &lt;ul&gt;
+        &lt;li&gt;通过 &lt;code&gt;/usr/bin/env&lt;/code&gt; 在系统后台静默更新特定用户的壁纸。&lt;/li&gt;
+        &lt;li&gt;通过 &lt;code&gt;/bin/bash&lt;/code&gt; 静默禁用&amp;amp;启用用户的麦克风和摄像头。这条用过 OBS 的人应该不陌生。&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;p&gt;而这些操作本身理应由 Administrator 通过命令行是可以轻松实现的。但是由于 macOS 的糟糕的权限设计，用户不得不深入到 &lt;code&gt;TCC.db&lt;/code&gt; 里去，用各种很 Tricky 的方式来实现。&lt;/p&gt;
+        &lt;h2 id="-access-"&gt;&lt;strong&gt;详解 access 表结构&lt;/strong&gt;&lt;/h2&gt;
+        &lt;p&gt;在上面的章节里，我们查看了 &lt;code&gt;TCC.db&lt;/code&gt; 所包含的数据表。而里面最有用的 &lt;code&gt;access&lt;/code&gt; 表的结构大概是这么个样子：&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-sql"&gt;&lt;span class="hljs-keyword"&gt;CREATE&lt;/span&gt; &lt;span class="hljs-keyword"&gt;TABLE&lt;/span&gt; &lt;span class="hljs-keyword"&gt;access&lt;/span&gt; (
+            service &lt;span class="hljs-built_in"&gt;TEXT&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,
+            &lt;span class="hljs-keyword"&gt;client&lt;/span&gt; &lt;span class="hljs-built_in"&gt;TEXT&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,
+            client_type &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,
+        
+        &lt;span class="hljs-comment"&gt;--  allowed INTEGER NOT NULL,       -- Removed in Big Sur&lt;/span&gt;
+        &lt;span class="hljs-comment"&gt;--  prompt_count INTEGER NOT NULL,  -- Removed in Big Sur&lt;/span&gt;
+        
+            auth_value &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,    &lt;span class="hljs-comment"&gt;-- Added in Big Sur&lt;/span&gt;
+            auth_reason &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,   &lt;span class="hljs-comment"&gt;-- Added in Big Sur&lt;/span&gt;
+            auth_version &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,  &lt;span class="hljs-comment"&gt;-- Added in Big Sur&lt;/span&gt;
+        
+            csreq &lt;span class="hljs-built_in"&gt;BLOB&lt;/span&gt;,
+            policy_id &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt;,
+        
+            &lt;span class="hljs-comment"&gt;-- Added in Mojave&lt;/span&gt;
+            indirect_object_identifier_type &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt;,
+            indirect_object_identifier &lt;span class="hljs-built_in"&gt;TEXT&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt; &lt;span class="hljs-keyword"&gt;DEFAULT&lt;/span&gt; &lt;span class="hljs-string"&gt;"UNUSED"&lt;/span&gt;,
+            indirect_object_code_identity &lt;span class="hljs-built_in"&gt;BLOB&lt;/span&gt;,
+        
+            flags &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt;,
+            last_modified &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt; &lt;span class="hljs-keyword"&gt;DEFAULT&lt;/span&gt; (&lt;span class="hljs-keyword"&gt;CAST&lt;/span&gt;(strftime(&lt;span class="hljs-string"&gt;'%s'&lt;/span&gt;,&lt;span class="hljs-string"&gt;'now'&lt;/span&gt;) &lt;span class="hljs-keyword"&gt;AS&lt;/span&gt; &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt;))
+        )
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;p&gt;这样的多维结构，使得用户可以在非常细致的颗粒度上控制自己的设备。例如，你可以授权某个应用访问你的摄像头，但是不授权它访问你的麦克风；你可以授权某个应用访问你的通讯录，但是不授权它访问你的日历；你可以授权某个应用访问你的照片，但是不授权它访问你的照片库。&lt;/p&gt;
+        &lt;p&gt;以下为每个字段的详细解释：&lt;/p&gt;
+        &lt;ul&gt;
+        &lt;li&gt;&lt;code&gt;service&lt;/code&gt;: 受 TCC 管理限制的服务名。比如 &lt;code&gt;kTCCServiceMicrophone&lt;/code&gt;，&lt;code&gt;kTCCServiceCamera&lt;/code&gt;，&lt;code&gt;kTCCServicePhotos&lt;/code&gt; 等等。完整的列表我放在本文末尾了。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;client&lt;/code&gt;: 申请访问服务的应用的 &lt;code&gt;Bundle Identifier&lt;/code&gt; 或者绝对路径（例如 &lt;code&gt;com.apple.finder&lt;/code&gt; 或者 &lt;code&gt;/usr/libexec/sshd-keygen-wrapper&lt;/code&gt;）&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;client_type&lt;/code&gt;: 申请访问服务的应用的类型。&lt;code&gt;0&lt;/code&gt; 代表 Bundle Identifier，&lt;code&gt;1&lt;/code&gt; 代表绝对路径。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;allowed&lt;/code&gt;: (本字段仅存在于 Big Sur 之前的版本) 是否允许访问（&lt;code&gt;1&lt;/code&gt;）或者拒绝（&lt;code&gt;0&lt;/code&gt;）&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;prompt_count&lt;/code&gt;: (本字段仅存在于 Big Sur 之前的版本) 用户被提示的次数。如果程序在第一次被拒绝后，仍然不断地申请访问，那么这个字段就会不断地增加。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;auth_value&lt;/code&gt;: (本字段仅存在于 Big Sur 以及之后的版本) 访问权限的值。&lt;code&gt;0&lt;/code&gt; 代表拒绝，&lt;code&gt;1&lt;/code&gt; 代表未知，&lt;code&gt;2&lt;/code&gt; 代表允许，&lt;code&gt;3&lt;/code&gt; 代表有限制。例如，允许应用选择照片，但是不允许它访问整个照片库。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;auth_reason&lt;/code&gt;: (本字段仅存在于 Big Sur 以及之后的版本) 用于描述 &lt;code&gt;auth_value&lt;/code&gt; 是因何理由被设置的。一个常见的值是 &lt;code&gt;3&lt;/code&gt;，代表 &lt;strong&gt;用户设置&lt;/strong&gt;。完整的列表我也放在本文末尾了。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;auth_version&lt;/code&gt;: (本字段仅存在于 Big Sur 以及之后的版本) 默认为 &lt;code&gt;1&lt;/code&gt;，也可能会随着未来的 macOS 版本而改变。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;csreq&lt;/code&gt;: 二进制代码签名要求 blob 必须满足特定的格式，以便获得访问权限。这是用于防止攻击者的欺骗/冒充。我会在下一个章节描述以下如何进行这部分内容的生成和解码。这里真得感谢 Keith Johnson，即便在英文互联网上，可能也就他那条回答真正解释清楚了这个字段。&lt;font color="Orange"&gt;&lt;b&gt;可以简单理解为对 &lt;code&gt;client&lt;/code&gt; 目标进行 &lt;code&gt;csreq&lt;/code&gt; 处理后的 &lt;code&gt;Blob&lt;/code&gt; 值，我会在下一节详细解释。&lt;/b&gt;&lt;/font&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;policy_id&lt;/code&gt;: 这个字段与 MDM(Mobile Device Management) 策略相关，&lt;a href="github.com/carlashley/tccprofile"&gt;carlashley/tccprofile&lt;/a&gt; 可以用于生成这些配置文件。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;indirect_object_identifier&lt;/code&gt;: 用于指定某个服务（例如 &lt;code&gt;kTCCServiceAppleEvents&lt;/code&gt;）的目标客户端。这个字段可以是 Bundle Identifier 或者绝对路径，就像 &lt;code&gt;client&lt;/code&gt; 字段一样。在某些情况下，这个字段会被设置为 &lt;code&gt;UNUSED&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;indirect_object_identifier_type&lt;/code&gt;: 用于指定 &lt;code&gt;indirect_object_identifier&lt;/code&gt; 字段的类型。&lt;code&gt;0&lt;/code&gt; 代表 Bundle Identifier，&lt;code&gt;1&lt;/code&gt; 代表绝对路径。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;indirect_object_code_identity&lt;/code&gt;: 和 &lt;code&gt;csreq&lt;/code&gt; 字段一样，这个字段也是用于防止攻击者的欺骗/冒充。但是这个字段的作用于 &lt;code&gt;indirect_object_identifier&lt;/code&gt; 字段指定的客户端。&lt;font color="Orange"&gt;&lt;b&gt;可以简单理解为对 &lt;code&gt;indirect_object_identifier&lt;/code&gt; 目标进行 &lt;code&gt;csreq&lt;/code&gt; 处理后的 &lt;code&gt;Blob&lt;/code&gt; 值，我会在下一节详细解释。&lt;/b&gt;&lt;/font&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;flags&lt;/code&gt;: 未知作用。值总是为 &lt;code&gt;0&lt;/code&gt;，可能与 MDM 策略一起使用。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;last_modified&lt;/code&gt;: 最后一次修改的时间戳。&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;p&gt;如果你还不知道什么是 &lt;code&gt;Blob&lt;/code&gt;，可以参考 &lt;a href="https://dev.mysql.com/doc/refman/8.0/en/blob.html"&gt;The BLOB and TEXT Types&lt;/a&gt;.&lt;/p&gt;
+        &lt;p&gt;有了这些字段的详细解释，我们就可以读懂甚至构造一条 &lt;code&gt;TCC.db&lt;/code&gt; &lt;code&gt;access&lt;/code&gt; 语句了。当然在开始之前，我们还需要补充一个知识点，就是 &lt;code&gt;csreq&lt;/code&gt;。利用 &lt;code&gt;csreq&lt;/code&gt;，我们可以解码一个二进制代码签名 &lt;code&gt;Blob&lt;/code&gt;，亦或者从零开始构造一个 &lt;code&gt;Blob&lt;/code&gt;。&lt;/p&gt;
+        &lt;h2 id="-csreq-sup-3-https-stackoverflow-com-questions-52706542-how-to-get-csreq-of-macos-application-on-command-line-57259004-57259004-sup-"&gt;&lt;strong&gt;关于 &lt;code&gt;csreq&lt;/code&gt;&lt;sup&gt;&lt;a href="https://stackoverflow.com/questions/52706542/how-to-get-csreq-of-macos-application-on-command-line/57259004#57259004"&gt;[3]&lt;/a&gt;&lt;/sup&gt;&lt;/strong&gt;&lt;/h2&gt;
+        &lt;p&gt;很多人一看到要构造一个 &lt;code&gt;Blob&lt;/code&gt; 第一反应就是慌，事实上我也是一样。&lt;/p&gt;
+        &lt;p&gt;不过我们在插入数据到 &lt;code&gt;TCC.db&lt;/code&gt; 的时候，只需要构造一个满足特定格式的、非常短的 &lt;code&gt;Blob&lt;/code&gt; 即可。这个 &lt;code&gt;Blob&lt;/code&gt; 的格式是由 Apple 的 &lt;code&gt;libsecurity_codesigning&lt;/code&gt; 库定义的，源代码可以在这里找到：&lt;a href="https://github.com/toriningen/apple-security-framework/blob/master/OSX/libsecurity_codesigning/lib/requirement.h"&gt;libsecurity_codesigning/lib/requirement.h&lt;/a&gt;&lt;/p&gt;
+        &lt;p&gt;比较粗略的看了一下，这个头文件定义了一个叫 &lt;code&gt;Requirement&lt;/code&gt; 的类，用于表示苹果的代码签名要求（Code Signing Requirements）。&lt;code&gt;Requirement&lt;/code&gt; 类的成员函数包括用于验证是否合法和满足格式要求的 &lt;code&gt;void validate&lt;/code&gt; 和 &lt;code&gt;bool validates&lt;/code&gt;；还有用于声明格式的 &lt;code&gt;kind&lt;/code&gt; 函数，不过目前唯一支持的表达式的类型是 &lt;code&gt;opExpr&lt;/code&gt;。&lt;/p&gt;
+        &lt;p&gt;不过实际上我们并不需要手动写 &lt;code&gt;csreq&lt;/code&gt; 的生成 &amp;amp; 翻译工具，macOS 本身就自带了一个同名的命令行工具 &lt;code&gt;csreq&lt;/code&gt;。这个工具可以用来生成 &lt;code&gt;Blob&lt;/code&gt;，也可以用来解码符合格式要求的 &lt;code&gt;Blob&lt;/code&gt;。这个工具一个旧版本的源代码在这里：&lt;a href="https://opensource.apple.com/source/security_systemkeychain/security_systemkeychain-55191/src/csreq.cpp.auto.html"&gt;csreq.cpp&lt;/a&gt;。&lt;/p&gt;
+        &lt;p&gt;下面主要来说说怎么用吧。就以 &lt;code&gt;TCC.db&lt;/code&gt; 插入时最常用的一条 &lt;code&gt;Blob&lt;/code&gt; 为例，来看看怎么用 &lt;code&gt;csreq&lt;/code&gt; 来生成和解码这个 &lt;code&gt;Blob&lt;/code&gt;。&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-shell"&gt;&lt;span class="hljs-comment"&gt;# Convert the hex string into a binary blob&lt;/span&gt;
+        &lt;span class="hljs-variable"&gt;$ &lt;/span&gt;BLOB=&lt;span class="hljs-string"&gt;"FADE0C000000003000000001000000060000000200000012636F6D2E6170706C652E5465726D696E616C000000000003"&lt;/span&gt;
+        &lt;span class="hljs-variable"&gt;$ &lt;/span&gt;echo &lt;span class="hljs-string"&gt;"$BLOB"&lt;/span&gt; | xxd -r -p &amp;gt; terminal-csreq.bin
+        
+        &lt;span class="hljs-comment"&gt;# Ask csreq to tell us what it means&lt;/span&gt;
+        &lt;span class="hljs-variable"&gt;$ &lt;/span&gt;csreq -r- -t &amp;lt; terminal-csreq.bin
+        identifier &lt;span class="hljs-string"&gt;"com.apple.Terminal"&lt;/span&gt; &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; anchor apple
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;p&gt;从解码的结果来看，这条 &lt;code&gt;Blob&lt;/code&gt; 代表了一个通过苹果官方签名的 &lt;code&gt;com.apple.Terminal&lt;/code&gt; 对象。&lt;/p&gt;
+        &lt;p&gt;那这条信息 &lt;code&gt;identifier "com.apple.Terminal" and anchor apple&lt;/code&gt; 本身是怎么来的呢？或者说，我们应该怎么写这条原始文本，并确认其符合 &lt;code&gt;Blob&lt;/code&gt; 的解析原文的格式要求呢？其实也很简单，使用另一个命令行工具 &lt;code&gt;codesign&lt;/code&gt; 就可以获得任意已签名对象的 &lt;code&gt;designated&lt;/code&gt; 字段，也就是 &lt;code&gt;Blob&lt;/code&gt; 的合法描述原文：&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-shell"&gt;$ codesign -d -r- /Applications/Utilities/Terminal.app
+        Executable=/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal
+        designated =&amp;gt; identifier &lt;span class="hljs-string"&gt;"com.apple.Terminal"&lt;/span&gt; and &lt;span class="hljs-built_in"&gt;anchor&lt;/span&gt; apple
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;p&gt;这里再举一个类似的例子，也就是游戏开发团队非常常用的 P4V 客户端，这玩意儿的 &lt;code&gt;Blob&lt;/code&gt; 是：&lt;/p&gt;
+        &lt;pre&gt;&lt;code&gt;fade0c000000009c00000001000000060000000600000006000000060000000200000010636f6d2e706572666f7263652e7034760000000f0000000e000000010000000a2a864886f763640602060000000000000000000e000000000000000a2a864886f7636406010d0000000000000000000b000000000000000a7375626a6563742e4f550000000000010000000a5059594653593&lt;span class="hljs-number"&gt;53453370000&lt;/span&gt;
+        &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;我们来依样画葫芦地解码一下：&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-shell"&gt;# Convert the hex string &lt;span class="hljs-keyword"&gt;into&lt;/span&gt; a binary blob
+        BLOB=&lt;span class="hljs-string"&gt;"fade0c000000009c00000001000000060000000600000006000000060000000200000010636f6d2e706572666f7263652e7034760000000f0000000e000000010000000a2a864886f763640602060000000000000000000e000000000000000a2a864886f7636406010d0000000000000000000b000000000000000a7375626a6563742e4f550000000000010000000a505959465359353453370000"&lt;/span&gt;
+        echo &lt;span class="hljs-string"&gt;"$BLOB"&lt;/span&gt; | xxd -r -p &amp;gt; p4v-csreq.bin
+        
+        # Ask csreq to tell us what it means
+        $ csreq -r- -t &amp;lt; p4v-csreq.bin
+        identifier &lt;span class="hljs-string"&gt;"com.perforce.p4v"&lt;/span&gt; &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; anchor apple generic &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; certificate &lt;span class="hljs-number"&gt;1&lt;/span&gt;[field&lt;span class="hljs-meta"&gt;.1&lt;/span&gt;&lt;span class="hljs-meta"&gt;.2&lt;/span&gt;&lt;span class="hljs-meta"&gt;.840&lt;/span&gt;&lt;span class="hljs-meta"&gt;.113635&lt;/span&gt;&lt;span class="hljs-meta"&gt;.100&lt;/span&gt;&lt;span class="hljs-meta"&gt;.6&lt;/span&gt;&lt;span class="hljs-meta"&gt;.2&lt;/span&gt;&lt;span class="hljs-meta"&gt;.6&lt;/span&gt;] /* exists */ &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; certificate leaf[field&lt;span class="hljs-meta"&gt;.1&lt;/span&gt;&lt;span class="hljs-meta"&gt;.2&lt;/span&gt;&lt;span class="hljs-meta"&gt;.840&lt;/span&gt;&lt;span class="hljs-meta"&gt;.113635&lt;/span&gt;&lt;span class="hljs-meta"&gt;.100&lt;/span&gt;&lt;span class="hljs-meta"&gt;.6&lt;/span&gt;&lt;span class="hljs-meta"&gt;.1&lt;/span&gt;&lt;span class="hljs-meta"&gt;.13&lt;/span&gt;] /* exists */ &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; certificate leaf[subject.OU] = PYYFSY54S7
+        
+        # ask codesign what the requirement text from the application itself is
+        $ codesign -d -r- /Applications/p4v.app
+        Executable=/Applications/p4v.app/Contents/MacOS/p4v
+        designated =&amp;gt; identifier &lt;span class="hljs-string"&gt;"com.perforce.p4v"&lt;/span&gt; &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; anchor apple generic &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; certificate &lt;span class="hljs-number"&gt;1&lt;/span&gt;[field&lt;span class="hljs-meta"&gt;.1&lt;/span&gt;&lt;span class="hljs-meta"&gt;.2&lt;/span&gt;&lt;span class="hljs-meta"&gt;.840&lt;/span&gt;&lt;span class="hljs-meta"&gt;.113635&lt;/span&gt;&lt;span class="hljs-meta"&gt;.100&lt;/span&gt;&lt;span class="hljs-meta"&gt;.6&lt;/span&gt;&lt;span class="hljs-meta"&gt;.2&lt;/span&gt;&lt;span class="hljs-meta"&gt;.6&lt;/span&gt;] /* exists */ &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; certificate leaf[field&lt;span class="hljs-meta"&gt;.1&lt;/span&gt;&lt;span class="hljs-meta"&gt;.2&lt;/span&gt;&lt;span class="hljs-meta"&gt;.840&lt;/span&gt;&lt;span class="hljs-meta"&gt;.113635&lt;/span&gt;&lt;span class="hljs-meta"&gt;.100&lt;/span&gt;&lt;span class="hljs-meta"&gt;.6&lt;/span&gt;&lt;span class="hljs-meta"&gt;.1&lt;/span&gt;&lt;span class="hljs-meta"&gt;.13&lt;/span&gt;] /* exists */ &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; certificate leaf[subject.OU] = PYYFSY54S7
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;p&gt;可以看到，就是这样简单的处理，就能获得任意对象合法的 &lt;code&gt;Blob&lt;/code&gt; 描述原文。&lt;/p&gt;
+        &lt;p&gt;那么第二个问题来了，既然可以通过 &lt;code&gt;codesign&lt;/code&gt; 来获得 &lt;code&gt;Blob&lt;/code&gt; 的描述原文，那么我们应该如何获得 &lt;code&gt;Blob&lt;/code&gt; 本身呢？这个问题其实也很简单，只要把 &lt;code&gt;Blob&lt;/code&gt; 的描述原文通过 &lt;code&gt;csreq&lt;/code&gt; 转换成二进制格式即可。&lt;/p&gt;
+        &lt;p&gt;这里我们继续用 &lt;code&gt;p4v.app&lt;/code&gt; 为例：&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-shell"&gt;&lt;span class="hljs-comment"&gt;# Get the requirement string from codesign&lt;/span&gt;
+        &lt;span class="hljs-variable"&gt;$ &lt;/span&gt;REQ_STR=&lt;span class="hljs-variable"&gt;$(&lt;/span&gt;codesign -d -r- &lt;span class="hljs-regexp"&gt;/Applications/p&lt;/span&gt;4v.app/ &lt;span class="hljs-number"&gt;2&lt;/span&gt;&amp;gt;&amp;amp;&lt;span class="hljs-number"&gt;1&lt;/span&gt; | awk -F &lt;span class="hljs-string"&gt;' =&amp;gt; '&lt;/span&gt; &lt;span class="hljs-string"&gt;'/designated/{print $2}'&lt;/span&gt;)
+        
+        &lt;span class="hljs-comment"&gt;# Convert the requirements string into it's binary representation(sadly it seems csreq requires the output to be a file; so we just throw it in /tmp)&lt;/span&gt;
+        &lt;span class="hljs-variable"&gt;$ &lt;/span&gt;echo &lt;span class="hljs-string"&gt;"$REQ_STR"&lt;/span&gt; | csreq -r- -b /tmp/csreq.bin
+        
+        &lt;span class="hljs-comment"&gt;# Convert the binary form to hex, and print it nicely for use in sqlite&lt;/span&gt;
+        &lt;span class="hljs-variable"&gt;$ &lt;/span&gt;REQ_HEX=&lt;span class="hljs-variable"&gt;$(&lt;/span&gt;xxd -p /tmp/csreq.bin  | tr -d &lt;span class="hljs-string"&gt;'\n'&lt;/span&gt;)
+        &lt;span class="hljs-variable"&gt;$ &lt;/span&gt;echo &lt;span class="hljs-string"&gt;"X'$REQ_HEX'"&lt;/span&gt;
+        X&lt;span class="hljs-string"&gt;'fade0c000000009c00000001000000060000000600000006000000060000000200000010636f6d2e706572666f7263652e7034760000000f0000000e000000010000000a2a864886f763640602060000000000000000000e000000000000000a2a864886f7636406010d0000000000000000000b000000000000000a7375626a6563742e4f550000000000010000000a505959465359353453370000'&lt;/span&gt;
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;p&gt;如你所见，刚才的 &lt;code&gt;Blob&lt;/code&gt; 描述原文，就这样简单的获取到了。看到这一步的你，应该已经有能力自由地获得任意目标的 &lt;code&gt;Blob&lt;/code&gt; 描述原文，并将其转换成 &lt;code&gt;Blob&lt;/code&gt; 本身。&lt;/p&gt;
+        &lt;h2 id="-tcc-db-access-"&gt;&lt;strong&gt;动手构造一条 &lt;code&gt;TCC.db&lt;/code&gt; &lt;code&gt;access&lt;/code&gt; 语句&lt;/strong&gt;&lt;/h2&gt;
+        &lt;p&gt;既然万事具备，说再多不如动手构造一条 &lt;code&gt;TCC.db&lt;/code&gt; 的插入语句来得记忆深刻。&lt;/p&gt;
+        &lt;p&gt;这里我们以 &lt;code&gt;kTCCServiceAppleEvents&lt;/code&gt; 服务为例，构造一个允许 &lt;code&gt;/usr/bin/env&lt;/code&gt; 通过 &lt;code&gt;AppleEvents&lt;/code&gt; 服务访问 &lt;code&gt;/System/Library/CoreServices/System Events.app&lt;/code&gt; 的 &lt;code&gt;access&lt;/code&gt; 表的插入语句。&lt;/p&gt;
+        &lt;p&gt;这个插入语句的作用呢，一般来说是用来帮助 &lt;code&gt;osascript&lt;/code&gt; 命令在执行 Apple Script 的时候，强制跳过一些用户 GUI 层的确认对话框，从而达到&lt;strong&gt;静默&lt;/strong&gt;执行 Login Items 的目的。在类似 JAMF Pro 这样的企业级管理软件中，有不少类似的骚操作。&lt;/p&gt;
+        &lt;p&gt;好，我们开始。&lt;/p&gt;
+        &lt;ul&gt;
+        &lt;li&gt;首先是 &lt;code&gt;service&lt;/code&gt; 字段，这个字段的值是 &lt;code&gt;kTCCServiceAppleEvents&lt;/code&gt;，是我们的目标服务，也就是用于跳过一些强制行的用户确认 Prompts 的服务对象。&lt;font color="Orange"&gt;&lt;b&gt;下一节为参考表&lt;/b&gt;&lt;/font&gt;&lt;/li&gt;
+        &lt;li&gt;然后是 &lt;code&gt;client&lt;/code&gt; 字段，这个字段的值是 &lt;code&gt;/usr/bin/env&lt;/code&gt;，这个是我们的目标客户端，也就是我们要让它通过 &lt;code&gt;kTCCServiceAppleEvents&lt;/code&gt; 服务访问 &lt;code&gt;/System/Applications/System Preferences.app&lt;/code&gt; 的客户端。这里无论是 &lt;code&gt;/usr/bin/env&lt;/code&gt; 还是其对应的 &lt;code&gt;identifier&lt;/code&gt;，都是可以的，所以也可以写成 &lt;code&gt;com.apple.env&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;client_type&lt;/code&gt; 字段，如果你 &lt;code&gt;client&lt;/code&gt; 填的是 &lt;code&gt;/usr/bin/env&lt;/code&gt;，也就是绝对路径，那就这个字段的值是 &lt;code&gt;1&lt;/code&gt;；如果填的是 &lt;code&gt;com.apple.env&lt;/code&gt;，也就是 &lt;code&gt;identifier&lt;/code&gt;，那就这个字段的值是 &lt;code&gt;0&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;auth_value&lt;/code&gt; 字段，那肯定是允许嘛。所以这个字段的值是 &lt;code&gt;2&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;auth_reason&lt;/code&gt; 字段，这个字段的值是 &lt;code&gt;3&lt;/code&gt;，也就是 &lt;code&gt;User Set&lt;/code&gt;。表示是用户自己设置的（笑）。&lt;font color="Orange"&gt;&lt;b&gt;下一节为参考表&lt;/b&gt;&lt;/font&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;auth_version&lt;/code&gt; 字段，默认就是 &lt;code&gt;1&lt;/code&gt;。别问，别管。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;csreq&lt;/code&gt; 字段，这个字段就是对 &lt;code&gt;/usr/bin/env&lt;/code&gt; 的 &lt;code&gt;Blob&lt;/code&gt; 描述原文的二进制表示。&lt;font color="Orange"&gt;&lt;b&gt;构造方法上面一节已经说的清清楚楚了。&lt;/b&gt;&lt;/font&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;policy_id&lt;/code&gt; 字段，我们暂时用不到，设置为 &lt;code&gt;NULL&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;indirect_object_identifier_type&lt;/code&gt; 也就是被访问对象的类型，这里是 &lt;code&gt;0&lt;/code&gt;，也就是 &lt;code&gt;identifier&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;indirect_object_identifier&lt;/code&gt; 字段，这个字段的值是 &lt;code&gt;/System/Library/CoreServices/System Events.app/&lt;/code&gt; 的 &lt;code&gt;identifier&lt;/code&gt;，也就是 &lt;code&gt;com.apple.systemevents&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;indirect_object_code_identity&lt;/code&gt; 字段，这个字段的值是 &lt;code&gt;/System/Library/CoreServices/System Events.app/&lt;/code&gt; 的 &lt;code&gt;Blob&lt;/code&gt; 二进制表示。&lt;font color="Orange"&gt;&lt;b&gt;构造方法也是参考上一节。&lt;/b&gt;&lt;/font&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;flags&lt;/code&gt; 字段，我们暂时用不到，设置为 &lt;code&gt;NULL&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;last_modified&lt;/code&gt; 字段，这个字段的值只要是合法的时间戳就行，我自己一般喜欢用 &lt;code&gt;2022-01-01 00:00:00&lt;/code&gt;，也就是 &lt;code&gt;1642634565&lt;/code&gt;。&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;p&gt;那么现在，我们的插入语句已经全部完成了，写出来就是这么个样子：&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-sql"&gt;&lt;span class="hljs-keyword"&gt;INSERT&lt;/span&gt; &lt;span class="hljs-keyword"&gt;INTO&lt;/span&gt; &lt;span class="hljs-keyword"&gt;access&lt;/span&gt; &lt;span class="hljs-keyword"&gt;VALUES&lt;/span&gt;(
+            &lt;span class="hljs-string"&gt;'kTCCServiceAppleEvents'&lt;/span&gt;,   &lt;span class="hljs-comment"&gt;-- service&lt;/span&gt;
+            &lt;span class="hljs-string"&gt;'/usr/bin/env'&lt;/span&gt;,                &lt;span class="hljs-comment"&gt;-- client&lt;/span&gt;
+            &lt;span class="hljs-number"&gt;1&lt;/span&gt;,                          &lt;span class="hljs-comment"&gt;-- client_type&lt;/span&gt;
+            &lt;span class="hljs-number"&gt;2&lt;/span&gt;,                          &lt;span class="hljs-comment"&gt;-- auth_value&lt;/span&gt;
+            &lt;span class="hljs-number"&gt;3&lt;/span&gt;,                          &lt;span class="hljs-comment"&gt;-- auth_reason&lt;/span&gt;
+            &lt;span class="hljs-number"&gt;1&lt;/span&gt;，                         &lt;span class="hljs-comment"&gt;-- auth_version&lt;/span&gt;
+            &lt;span class="hljs-comment"&gt;-- csreq&lt;/span&gt;
+            X&lt;span class="hljs-string"&gt;'fade0c000000002c0000000100000006000000020000000d636f6d2e6170706c652e656e7600000000000003'&lt;/span&gt;,
+            &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,                       &lt;span class="hljs-comment"&gt;-- policy_id&lt;/span&gt;
+            &lt;span class="hljs-number"&gt;0&lt;/span&gt;,                          &lt;span class="hljs-comment"&gt;-- indirect_object_identifier_type&lt;/span&gt;
+            &lt;span class="hljs-string"&gt;'com.apple.systemevents'&lt;/span&gt;,   &lt;span class="hljs-comment"&gt;-- indirect_object_identifier&lt;/span&gt;
+            &lt;span class="hljs-comment"&gt;-- indirect_object_code_identity&lt;/span&gt;
+            X&lt;span class="hljs-string"&gt;'fade0c000000003400000001000000060000000200000016636f6d2e6170706c652e73797374656d6576656e7473000000000003'&lt;/span&gt;,
+            &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,                       &lt;span class="hljs-comment"&gt;-- flags&lt;/span&gt;
+            &lt;span class="hljs-number"&gt;1642634565&lt;/span&gt;                  &lt;span class="hljs-comment"&gt;-- last_modified&lt;/span&gt;
+        );
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;p&gt;之后我们就可以用 &lt;code&gt;sqlite3&lt;/code&gt; 命令行工具，或者 &lt;code&gt;DB Browser for SQLite&lt;/code&gt; 这样的 GUI 工具，将这条语句插入到 &lt;code&gt;TCC.db&lt;/code&gt; 中了。&lt;/p&gt;
+        &lt;p&gt;然后，你就可以通过构造一个 &lt;code&gt;plist&lt;/code&gt; 文件和 &lt;code&gt;launchctl&lt;/code&gt; 命令，给用户加载一些 Login Items，例如更换壁纸、更换 Dock 图标、更换桌面图标等等，而不需要经过用户在 GUI 的窗口确认了。&lt;/p&gt;
+        &lt;p&gt;以下为一个简单的 plist 文件示例：&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-xml"&gt;&lt;span class="xml"&gt;&lt;span class="php"&gt;&lt;span class="hljs-meta"&gt;&amp;lt;?&lt;/span&gt;xml version=&lt;span class="hljs-string"&gt;"1.0"&lt;/span&gt; encoding=&lt;span class="hljs-string"&gt;"UTF-8"&lt;/span&gt;&lt;span class="hljs-meta"&gt;?&amp;gt;&lt;/span&gt;&lt;/span&gt;
+        &lt;span class="hljs-meta"&gt;&amp;lt;!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"&amp;gt;&lt;/span&gt;
+        &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;plist&lt;/span&gt; &lt;span class="hljs-attr"&gt;version&lt;/span&gt;=&lt;span class="hljs-string"&gt;"1.0"&lt;/span&gt;&amp;gt;&lt;/span&gt;
+        &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;dict&lt;/span&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;key&lt;/span&gt;&amp;gt;&lt;/span&gt;Label&lt;span class="hljs-tag"&gt;&amp;lt;/&lt;span class="hljs-name"&gt;key&lt;/span&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;string&lt;/span&gt;&amp;gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="hljs-template-variable"&gt;{{ plist_name }}&lt;/span&gt;&lt;span class="xml"&gt;&lt;span class="hljs-tag"&gt;&amp;lt;/&lt;span class="hljs-name"&gt;string&lt;/span&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;key&lt;/span&gt;&amp;gt;&lt;/span&gt;Program&lt;span class="hljs-tag"&gt;&amp;lt;/&lt;span class="hljs-name"&gt;key&lt;/span&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;string&lt;/span&gt;&amp;gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="hljs-template-variable"&gt;{{ apple_script_path }}&lt;/span&gt;&lt;span class="xml"&gt;&lt;span class="hljs-tag"&gt;&amp;lt;/&lt;span class="hljs-name"&gt;string&lt;/span&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;key&lt;/span&gt;&amp;gt;&lt;/span&gt;RunAtLoad&lt;span class="hljs-tag"&gt;&amp;lt;/&lt;span class="hljs-name"&gt;key&lt;/span&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;true&lt;/span&gt;/&amp;gt;&lt;/span&gt;
+        &lt;span class="hljs-tag"&gt;&amp;lt;/&lt;span class="hljs-name"&gt;dict&lt;/span&gt;&amp;gt;&lt;/span&gt;
+        &lt;span class="hljs-tag"&gt;&amp;lt;/&lt;span class="hljs-name"&gt;plist&lt;/span&gt;&amp;gt;&lt;/span&gt;&lt;/span&gt;
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;p&gt;&lt;font color="Orange"&gt;&lt;b&gt;吐槽&lt;/b&gt;&lt;/font&gt;：明明非常正常的设备和系统管理操作，非要被苹果弄得像是黑客入侵操作一样。真有你的，库克。&lt;/p&gt;
+        &lt;h2 id="-service-auth_reason-sup-2-https-www-rainforestqa-com-blog-macos-tcc-db-deep-dive-sup-"&gt;&lt;strong&gt;&lt;code&gt;Service&lt;/code&gt; &amp;amp; &lt;code&gt;Auth_Reason&lt;/code&gt; 参考表&lt;sup&gt;&lt;a href="https://www.rainforestqa.com/blog/macos-tcc-db-deep-dive"&gt;[2]&lt;/a&gt;&lt;/sup&gt;&lt;/strong&gt;&lt;/h2&gt;
+        &lt;p&gt;&lt;br&gt;&lt;/p&gt;
+        &lt;details style="box-shadow: 2px 2px 5px; border-radius: 6px; padding: .5em .5em .5em;"&gt;
+            &lt;summary&gt;&lt;b&gt;SERVICE List&lt;/b&gt;&lt;/summary&gt;
+            &lt;br&gt;
+            &lt;table border="1"&gt;
+                &lt;tbody&gt;&lt;tr&gt; &lt;th&gt;&lt;b&gt;Value&lt;/b&gt;&lt;/th&gt; &lt;th&gt;&lt;b&gt;Description&lt;/b&gt;&lt;/th&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceAddressBook&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access your contacts.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceAppleEvents&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client wants access to control indirect_object. Allowing control will provide access to documents and       data in indirect_object, and to perform actions within that app.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceBluetoothAlways&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to use Bluetooth.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceCalendar&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access your calendar.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceCamera&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access the camera.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceContactsFull&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access all of your contacts information.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceContactsLimited&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access your contacts basic information.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceFileProviderDomain&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client wants to access files managed by indirect_object.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceFileProviderPresence&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Do you want to allow client to see when you are using files managed by it? It will see which applications are used to access files and whether you are actively using them. It will not see when files that are not managed by it are accessed.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceLocation&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to use your current location.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceMediaLibrary&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access Apple Music, your music and video activity, and your media library.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceMicrophone&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access the microphone.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceMotion&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client Would Like to Access Your Motion &amp;amp; Fitness Activity.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServicePhotos&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client Would Like to Access Your Photos&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServicePhotosAdd&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client Would Like to Add to your Photos&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServicePrototype3Rights&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client Would Like Authorization to Test Service Proto3Right.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServicePrototype4Rights&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client Would Like Authorization to Test Service Proto4Right.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceReminders&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access your reminders.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceScreenCapture&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to capture the contents of the system display.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSiri&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Would You Like to Use client with Siri?&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSpeechRecognition&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client Would Like to Access Speech Recognition.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicyDesktopFolder&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access files in your Desktop folder.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicyDeveloperFiles&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access a file used in Software Development.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicyDocumentsFolder&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access files in your Documents folder.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicyDownloadsFolder&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access files in your Downloads folder.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicyNetworkVolumes&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access files on a network volume.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicyRemovableVolumes&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access files on a removable volume.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicySysAdminFiles&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to administer your computer. Administration can include modifying passwords, networking, and system settings.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceWillow&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access your Home data.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicyAllFiles&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Full Disk Access&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceAccessibility&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Allows app to control your computer&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServicePostEvent&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Allows to send keystrokes&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceListenEvent&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Input Monitoring; to monitor input from your keyboard&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceDeveloperTool&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Allows app to run software locally that do not meet the system’s security policy&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceLiverpool&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Related to location services&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceUbiquity&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Related to iCloud&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceShareKit&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Related to the share feature(presumably from iOS)(ShareKit)&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceLinkedIn&lt;/b&gt;&lt;/td&gt; &lt;td&gt;LinkedIn&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceTwitter&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Twitter&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceFacebook&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Facebook&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSinaWeibo&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Sina Weibo&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceTencentWeibo&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Tencent Weibo&lt;/td&gt; &lt;/tr&gt;
+            &lt;/tbody&gt;&lt;/table&gt;
+        &lt;/details&gt;
+        ‍
+        &lt;br&gt;
+        &lt;details style="box-shadow: 2px 2px 5px; border-radius: 6px; padding: .5em .5em .5em;"&gt;
+            &lt;summary&gt;&lt;b&gt;AUTH_REASON List&lt;/b&gt;&lt;/summary&gt;
+            &lt;br&gt;
+            &lt;table border="1"&gt;
+                &lt;tbody&gt;&lt;tr&gt; &lt;th&gt;&lt;b&gt;Value&lt;/b&gt;&lt;/th&gt; &lt;th&gt;&lt;b&gt;Description&lt;/b&gt;&lt;/th&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;1&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Error&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;2&lt;/b&gt;&lt;/td&gt; &lt;td&gt;User Consent&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;3&lt;/b&gt;&lt;/td&gt; &lt;td&gt;User Set&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;4&lt;/b&gt;&lt;/td&gt; &lt;td&gt;System Set&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;5&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Service Policy&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;6&lt;/b&gt;&lt;/td&gt; &lt;td&gt;MDM Policy&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;7&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Override Policy&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;8&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Missing usage string&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;9&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Prompt Timeout&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;10&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Preflight Unknown&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;11&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Entitled&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;12&lt;/b&gt;&lt;/td&gt; &lt;td&gt;App Type Policy&lt;/td&gt; &lt;/tr&gt;
+            &lt;/tbody&gt;&lt;/table&gt;
+        &lt;/details&gt;
+        
+        &lt;p&gt;&lt;br&gt;&lt;/p&gt;
+        &lt;h2 id="-"&gt;&lt;strong&gt;相关文献&lt;/strong&gt;&lt;/h2&gt;
+        &lt;ol&gt;
+        &lt;li&gt;&lt;em&gt;&lt;a href="https://www.slideshare.net/CsabaFitzl/20-ways-to-bypass-your-mac-os-privacy-mechanisms"&gt;20+ ways to bypass your mac os privacy mechanisms -- Csaba Fitzl&lt;/a&gt;&lt;/em&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;em&gt;&lt;a href="https://www.rainforestqa.com/blog/macos-tcc-db-deep-dive"&gt;A deep dive into macOS TCC.db -- Keith Johnson&lt;/a&gt;&lt;/em&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;em&gt;&lt;a href="https://stackoverflow.com/questions/52706542/how-to-get-csreq-of-macos-application-on-command-line/57259004#57259004"&gt;How to get csreq of macOS application on command line? -- Keith Johnson&lt;/a&gt;&lt;/em&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;em&gt;&lt;a href="https://objective-see.org/blog/blog_0x4C.html"&gt;CVE-2020–9934&lt;/a&gt;&lt;/em&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;em&gt;&lt;a href="https://nvd.nist.gov/vuln/detail/CVE-2021-1784"&gt;CVE-2021-1784&lt;/a&gt;&lt;/em&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;em&gt;&lt;a href="https://theevilbit.github.io/posts/cve_2021_30920/"&gt;CVE-2021-30920&lt;/a&gt;&lt;/em&gt;&lt;/li&gt;
+        &lt;/ol&gt;
+             
+        &lt;!-- Post Content Ends Here --&gt;
+      &lt;/div&gt;
+      &lt;div class="footer"&gt;
+      &lt;p&gt;&lt;a href="https://creativecommons.org/licenses/by/4.0/" target="_blank"&gt;CC 4.0&lt;/a&gt;
+        &lt;br&gt;
+        © 1995-&lt;script type="text/javascript"&gt;document.write((new Date()).getFullYear());&lt;/script&gt;
+        Kivinsae Fang
+        &lt;br&gt;
+        Powered by Raw HTML
+      &lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  
+
+&lt;/body&gt;</content></entry><entry><title>TCC 数据库：开发者的噩梦，攻击者的狂欢</title><link href="http://www.kivinsae.com/posts/2023-03-24-tcc_db.html" /><content type="html">&lt;head&gt;
+    &lt;/head&gt;&lt;body&gt;&lt;nav&gt;
+      &lt;ul&gt;
+        &lt;li&gt;&lt;a href="../index.html"&gt;Home&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href="../archives.html"&gt;Archives&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href="../categories.html"&gt;Categories&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href="../friends.html"&gt;Friends&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href="../about.html"&gt;About&lt;/a&gt;&lt;/li&gt;
+      &lt;/ul&gt;
+    &lt;/nav&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;title&gt;TCC 数据库：开发者的噩梦，攻击者的狂欢&lt;/title&gt;
+    &lt;link rel="stylesheet" href="../styles/style.css"&gt;
+    &lt;link rel="stylesheet" href="../styles/prism-tomorrow.css"&gt;
+  
+  
+    &lt;script src="../styles/prism-tomorrow.js"&gt;&lt;/script&gt;
+    &lt;div class="container"&gt;
+      &lt;div class="header"&gt;
+        &lt;h1&gt;TCC 数据库：开发者的噩梦，攻击者的狂欢&lt;/h1&gt;
+      &lt;/div&gt;
+      &lt;div class="post"&gt;
+        &lt;!-- Post Content Starts Here --&gt;
+        &lt;font color="Orange"&gt;&lt;b&gt;苹果，我完全无法理解你&lt;/b&gt;&lt;/font&gt;
+
+        &lt;h2 id="-"&gt;&lt;strong&gt;前言&lt;/strong&gt;&lt;/h2&gt;
+        &lt;p&gt;最近几周，我花了不少时间在 macOS 的自动化流程以及 MDM (Mobile Device Management) 的开发上。&lt;/p&gt;
+        &lt;p&gt;事实上我一直以来都难以理解为什么有那么多企业选择使用 macOS 作为员工的工作电脑。&lt;/p&gt;
+        &lt;p&gt;姑且可以认为多数的科技公司从业者都具备一些必要的计算机常识和命令行技能，但是 macOS 本身其实是基于 XNU 内核构建的 Darwin ，而 Darwin 本身又包含了大量来自 BSD 的特性，这些特性意味着用户在深入使用的时候，往往不得不面对一些在 BSD 和 Linux 中同名同姓却完全不同的命令，例如 &lt;code&gt;mount&lt;/code&gt;。&lt;/p&gt;
+        &lt;p&gt;而更加好死不死的是，Apple 还额外贴心地从 macOS 10.11 开始加入了 &lt;code&gt;SIP (System Integrity Protection)&lt;/code&gt;，也就是著名的&lt;font color="DarkOrchid"&gt;&lt;b&gt;苹果是你的爸爸&lt;/b&gt;&lt;/font&gt;组件。&lt;/p&gt;
+        &lt;p&gt;这意味着无论你是卑微的个人设备还是财大气粗的企业采购设备，都要面临你的 root 不是真正的 root 这样的糟糕体验。而更加搞笑的是，有时候 SIP 不但没有真正保护用户安全，还接二连三的爆出涉及 &lt;code&gt;TCC.db&lt;/code&gt; 的各种权限漏洞，给黑客大开便捷之门。有时候真觉得 macOS 上开发工作流太噩梦了。&lt;/p&gt;
+        &lt;p&gt;本篇我就稍微聊一聊 &lt;code&gt;TCC.db&lt;/code&gt; 这个数据库。&lt;/p&gt;
+        &lt;h2 id="-tcc-transparency-consent-and-control-"&gt;&lt;strong&gt;TCC - Transparency, Consent, and Control&lt;/strong&gt;&lt;/h2&gt;
+        &lt;p&gt;&lt;code&gt;TCC.db&lt;/code&gt; 是 macOS 10.9 之后引入的一个数据库，用于记录用户对于各种系统服务的授权情况。系统级 &lt;code&gt;TCC.db&lt;/code&gt; 的完整路径是 &lt;code&gt;/Library/Application Support/com.apple.TCC/TCC.db&lt;/code&gt;。而对于每一个单独的用户，其实还有一个 &lt;code&gt;TCC.db&lt;/code&gt;，位于 &lt;code&gt;$HOME/Library/Application Support/com.apple.TCC/TCC.db&lt;/code&gt;。&lt;/p&gt;
+        &lt;p&gt;这个数据库的结构非常简单，只有 6 个表：&lt;/p&gt;
+        &lt;ul&gt;
+        &lt;li&gt;&lt;code&gt;access&lt;/code&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;active_policy&lt;/code&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;expired&lt;/code&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;access_overrides&lt;/code&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;admin&lt;/code&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;policies&lt;/code&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;p&gt;事实上这 6 个表里，在默认情况下有且只有 &lt;code&gt;access&lt;/code&gt; 这一个表是有有效数据的。其他的表利用 sqlite3 查看的话可以发现都是空表，而 &lt;code&gt;admin&lt;/code&gt; 表也仅有一行：&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-shell"&gt;sqlite3 "./Library/Application Support/com.apple.TCC/TCC.db" "&lt;span class="hljs-keyword"&gt;select&lt;/span&gt; * &lt;span class="hljs-keyword"&gt;from&lt;/span&gt; access_overrides;"
+        sqlite3 "./Library/Application Support/com.apple.TCC/TCC.db" "&lt;span class="hljs-keyword"&gt;select&lt;/span&gt; * &lt;span class="hljs-keyword"&gt;from&lt;/span&gt; active_policy;"
+        sqlite3 "./Library/Application Support/com.apple.TCC/TCC.db" "&lt;span class="hljs-keyword"&gt;select&lt;/span&gt; * &lt;span class="hljs-keyword"&gt;from&lt;/span&gt; expired;"
+        sqlite3 "./Library/Application Support/com.apple.TCC/TCC.db" "&lt;span class="hljs-keyword"&gt;select&lt;/span&gt; * &lt;span class="hljs-keyword"&gt;from&lt;/span&gt; policies;"
+        sqlite3 "./Library/Application Support/com.apple.TCC/TCC.db" "&lt;span class="hljs-keyword"&gt;select&lt;/span&gt; * &lt;span class="hljs-keyword"&gt;from&lt;/span&gt; &lt;span class="hljs-keyword"&gt;admin&lt;/span&gt;;"
+        version|20
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;font color="DimGrey"&gt;&lt;strong&gt;PS&lt;/strong&gt;: 无端推测，iOS 的权限实现大概率也是基于类似的机制。&lt;/font&gt;
+        
+        &lt;p&gt;然而这一切对开发者友善的前提是，macOS 需要在 Darwin 的命令行支持或系统开发接口中，也复刻一套这样的授权机制。然而事实上是，macOS 没有做到这一点，也似乎并不打算做好这些支持。&lt;/p&gt;
+        &lt;p&gt;稍微对 SIP 有所接触的人应该会很容易察觉到，苹果对于&lt;b&gt;&lt;i&gt;用户可以在自己的机器上可以做什么&lt;/i&gt;&lt;/b&gt;这件事情上，做了非常多的限制。在最近的几个版本的 macOS 中，对于所有系统相关的目录，无论用户本身是否是 Administrator，都仅能做只读操作；即便用户通过 &lt;code&gt;sudo su&lt;/code&gt; 提权到 root，也无法对这些目录进行任何的写操作。&lt;/p&gt;
+        &lt;p&gt;然而 macOS 就仿佛脑子神经搭错了一样，把 &lt;code&gt;TCC.db&lt;/code&gt; 放在了一个普通用户可以进行读写的位置。这就留下隐患了。&lt;/p&gt;
+        &lt;p&gt;当然，macOS 在正常情况下对 &lt;code&gt;TCC.db&lt;/code&gt; 还是进行了许多的保护，但是在过去的几年中，这些保护可以被二十多种方法&lt;sup&gt;&lt;a href="https://www.slideshare.net/CsabaFitzl/20-ways-to-bypass-your-mac-os-privacy-mechanisms"&gt;[1]&lt;/a&gt;&lt;/sup&gt;绕过，TCC 提权漏洞在几乎每一个版本的 macOS 中都有出现。这些方法包括且不限于：&lt;/p&gt;
+        &lt;ul&gt;
+        &lt;li&gt;插件注入&lt;/li&gt;
+        &lt;li&gt;进程注入&lt;sup&gt;&lt;a href="https://objective-see.org/blog/blog_0x4C.html"&gt;[4]&lt;/a&gt;&lt;/sup&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;/Library&lt;/code&gt; &amp;amp; &lt;code&gt;$HOME&lt;/code&gt; 挂载 &lt;sup&gt;&lt;a href="https://nvd.nist.gov/vuln/detail/CVE-2021-1784"&gt;[5]&lt;/a&gt;, &lt;a href="https://theevilbit.github.io/posts/cve_2021_30920/"&gt;[6]&lt;/a&gt;&lt;/sup&gt;&lt;/li&gt;
+        &lt;li&gt;App 行为漏洞利用&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;/usr/bin/grep&lt;/code&gt; 注入&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;p&gt;这样就呈现出了一个非常怪异的状态。macOS 在每一个版本里都留下了方便攻击者的 TCC 提权方式，却对有着 Administrator 权限的用户进行了严格的命令行指令的限制。举几个例子，以下操作就必须通过往 &lt;code&gt;TCC.db&lt;/code&gt; 中写入数据来实现：&lt;/p&gt;
+        &lt;ul&gt;
+        &lt;li&gt;通过 &lt;code&gt;/usr/bin/env&lt;/code&gt; 在系统后台静默更新特定用户的壁纸。&lt;/li&gt;
+        &lt;li&gt;通过 &lt;code&gt;/bin/bash&lt;/code&gt; 静默禁用&amp;amp;启用用户的麦克风和摄像头。这条用过 OBS 的人应该不陌生。&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;p&gt;而这些操作本身理应由 Administrator 通过命令行是可以轻松实现的。但是由于 macOS 的糟糕的权限设计，用户不得不深入到 &lt;code&gt;TCC.db&lt;/code&gt; 里去，用各种很 Tricky 的方式来实现。&lt;/p&gt;
+        &lt;h2 id="-access-"&gt;&lt;strong&gt;详解 access 表结构&lt;/strong&gt;&lt;/h2&gt;
+        &lt;p&gt;在上面的章节里，我们查看了 &lt;code&gt;TCC.db&lt;/code&gt; 所包含的数据表。而里面最有用的 &lt;code&gt;access&lt;/code&gt; 表的结构大概是这么个样子：&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-sql"&gt;&lt;span class="hljs-keyword"&gt;CREATE&lt;/span&gt; &lt;span class="hljs-keyword"&gt;TABLE&lt;/span&gt; &lt;span class="hljs-keyword"&gt;access&lt;/span&gt; (
+            service &lt;span class="hljs-built_in"&gt;TEXT&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,
+            &lt;span class="hljs-keyword"&gt;client&lt;/span&gt; &lt;span class="hljs-built_in"&gt;TEXT&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,
+            client_type &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,
+        
+        &lt;span class="hljs-comment"&gt;--  allowed INTEGER NOT NULL,       -- Removed in Big Sur&lt;/span&gt;
+        &lt;span class="hljs-comment"&gt;--  prompt_count INTEGER NOT NULL,  -- Removed in Big Sur&lt;/span&gt;
+        
+            auth_value &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,    &lt;span class="hljs-comment"&gt;-- Added in Big Sur&lt;/span&gt;
+            auth_reason &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,   &lt;span class="hljs-comment"&gt;-- Added in Big Sur&lt;/span&gt;
+            auth_version &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,  &lt;span class="hljs-comment"&gt;-- Added in Big Sur&lt;/span&gt;
+        
+            csreq &lt;span class="hljs-built_in"&gt;BLOB&lt;/span&gt;,
+            policy_id &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt;,
+        
+            &lt;span class="hljs-comment"&gt;-- Added in Mojave&lt;/span&gt;
+            indirect_object_identifier_type &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt;,
+            indirect_object_identifier &lt;span class="hljs-built_in"&gt;TEXT&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt; &lt;span class="hljs-keyword"&gt;DEFAULT&lt;/span&gt; &lt;span class="hljs-string"&gt;"UNUSED"&lt;/span&gt;,
+            indirect_object_code_identity &lt;span class="hljs-built_in"&gt;BLOB&lt;/span&gt;,
+        
+            flags &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt;,
+            last_modified &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt; &lt;span class="hljs-keyword"&gt;NOT&lt;/span&gt; &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt; &lt;span class="hljs-keyword"&gt;DEFAULT&lt;/span&gt; (&lt;span class="hljs-keyword"&gt;CAST&lt;/span&gt;(strftime(&lt;span class="hljs-string"&gt;'%s'&lt;/span&gt;,&lt;span class="hljs-string"&gt;'now'&lt;/span&gt;) &lt;span class="hljs-keyword"&gt;AS&lt;/span&gt; &lt;span class="hljs-built_in"&gt;INTEGER&lt;/span&gt;))
+        )
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;p&gt;这样的多维结构，使得用户可以在非常细致的颗粒度上控制自己的设备。例如，你可以授权某个应用访问你的摄像头，但是不授权它访问你的麦克风；你可以授权某个应用访问你的通讯录，但是不授权它访问你的日历；你可以授权某个应用访问你的照片，但是不授权它访问你的照片库。&lt;/p&gt;
+        &lt;p&gt;以下为每个字段的详细解释：&lt;/p&gt;
+        &lt;ul&gt;
+        &lt;li&gt;&lt;code&gt;service&lt;/code&gt;: 受 TCC 管理限制的服务名。比如 &lt;code&gt;kTCCServiceMicrophone&lt;/code&gt;，&lt;code&gt;kTCCServiceCamera&lt;/code&gt;，&lt;code&gt;kTCCServicePhotos&lt;/code&gt; 等等。完整的列表我放在本文末尾了。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;client&lt;/code&gt;: 申请访问服务的应用的 &lt;code&gt;Bundle Identifier&lt;/code&gt; 或者绝对路径（例如 &lt;code&gt;com.apple.finder&lt;/code&gt; 或者 &lt;code&gt;/usr/libexec/sshd-keygen-wrapper&lt;/code&gt;）&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;client_type&lt;/code&gt;: 申请访问服务的应用的类型。&lt;code&gt;0&lt;/code&gt; 代表 Bundle Identifier，&lt;code&gt;1&lt;/code&gt; 代表绝对路径。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;allowed&lt;/code&gt;: (本字段仅存在于 Big Sur 之前的版本) 是否允许访问（&lt;code&gt;1&lt;/code&gt;）或者拒绝（&lt;code&gt;0&lt;/code&gt;）&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;prompt_count&lt;/code&gt;: (本字段仅存在于 Big Sur 之前的版本) 用户被提示的次数。如果程序在第一次被拒绝后，仍然不断地申请访问，那么这个字段就会不断地增加。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;auth_value&lt;/code&gt;: (本字段仅存在于 Big Sur 以及之后的版本) 访问权限的值。&lt;code&gt;0&lt;/code&gt; 代表拒绝，&lt;code&gt;1&lt;/code&gt; 代表未知，&lt;code&gt;2&lt;/code&gt; 代表允许，&lt;code&gt;3&lt;/code&gt; 代表有限制。例如，允许应用选择照片，但是不允许它访问整个照片库。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;auth_reason&lt;/code&gt;: (本字段仅存在于 Big Sur 以及之后的版本) 用于描述 &lt;code&gt;auth_value&lt;/code&gt; 是因何理由被设置的。一个常见的值是 &lt;code&gt;3&lt;/code&gt;，代表 &lt;strong&gt;用户设置&lt;/strong&gt;。完整的列表我也放在本文末尾了。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;auth_version&lt;/code&gt;: (本字段仅存在于 Big Sur 以及之后的版本) 默认为 &lt;code&gt;1&lt;/code&gt;，也可能会随着未来的 macOS 版本而改变。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;csreq&lt;/code&gt;: 二进制代码签名要求 blob 必须满足特定的格式，以便获得访问权限。这是用于防止攻击者的欺骗/冒充。我会在下一个章节描述以下如何进行这部分内容的生成和解码。这里真得感谢 Keith Johnson，即便在英文互联网上，可能也就他那条回答真正解释清楚了这个字段。&lt;font color="Orange"&gt;&lt;b&gt;可以简单理解为对 &lt;code&gt;client&lt;/code&gt; 目标进行 &lt;code&gt;csreq&lt;/code&gt; 处理后的 &lt;code&gt;Blob&lt;/code&gt; 值，我会在下一节详细解释。&lt;/b&gt;&lt;/font&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;policy_id&lt;/code&gt;: 这个字段与 MDM(Mobile Device Management) 策略相关，&lt;a href="github.com/carlashley/tccprofile"&gt;carlashley/tccprofile&lt;/a&gt; 可以用于生成这些配置文件。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;indirect_object_identifier&lt;/code&gt;: 用于指定某个服务（例如 &lt;code&gt;kTCCServiceAppleEvents&lt;/code&gt;）的目标客户端。这个字段可以是 Bundle Identifier 或者绝对路径，就像 &lt;code&gt;client&lt;/code&gt; 字段一样。在某些情况下，这个字段会被设置为 &lt;code&gt;UNUSED&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;indirect_object_identifier_type&lt;/code&gt;: 用于指定 &lt;code&gt;indirect_object_identifier&lt;/code&gt; 字段的类型。&lt;code&gt;0&lt;/code&gt; 代表 Bundle Identifier，&lt;code&gt;1&lt;/code&gt; 代表绝对路径。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;indirect_object_code_identity&lt;/code&gt;: 和 &lt;code&gt;csreq&lt;/code&gt; 字段一样，这个字段也是用于防止攻击者的欺骗/冒充。但是这个字段的作用于 &lt;code&gt;indirect_object_identifier&lt;/code&gt; 字段指定的客户端。&lt;font color="Orange"&gt;&lt;b&gt;可以简单理解为对 &lt;code&gt;indirect_object_identifier&lt;/code&gt; 目标进行 &lt;code&gt;csreq&lt;/code&gt; 处理后的 &lt;code&gt;Blob&lt;/code&gt; 值，我会在下一节详细解释。&lt;/b&gt;&lt;/font&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;flags&lt;/code&gt;: 未知作用。值总是为 &lt;code&gt;0&lt;/code&gt;，可能与 MDM 策略一起使用。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;last_modified&lt;/code&gt;: 最后一次修改的时间戳。&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;p&gt;如果你还不知道什么是 &lt;code&gt;Blob&lt;/code&gt;，可以参考 &lt;a href="https://dev.mysql.com/doc/refman/8.0/en/blob.html"&gt;The BLOB and TEXT Types&lt;/a&gt;.&lt;/p&gt;
+        &lt;p&gt;有了这些字段的详细解释，我们就可以读懂甚至构造一条 &lt;code&gt;TCC.db&lt;/code&gt; &lt;code&gt;access&lt;/code&gt; 语句了。当然在开始之前，我们还需要补充一个知识点，就是 &lt;code&gt;csreq&lt;/code&gt;。利用 &lt;code&gt;csreq&lt;/code&gt;，我们可以解码一个二进制代码签名 &lt;code&gt;Blob&lt;/code&gt;，亦或者从零开始构造一个 &lt;code&gt;Blob&lt;/code&gt;。&lt;/p&gt;
+        &lt;h2 id="-csreq-sup-3-https-stackoverflow-com-questions-52706542-how-to-get-csreq-of-macos-application-on-command-line-57259004-57259004-sup-"&gt;&lt;strong&gt;关于 &lt;code&gt;csreq&lt;/code&gt;&lt;sup&gt;&lt;a href="https://stackoverflow.com/questions/52706542/how-to-get-csreq-of-macos-application-on-command-line/57259004#57259004"&gt;[3]&lt;/a&gt;&lt;/sup&gt;&lt;/strong&gt;&lt;/h2&gt;
+        &lt;p&gt;很多人一看到要构造一个 &lt;code&gt;Blob&lt;/code&gt; 第一反应就是慌，事实上我也是一样。&lt;/p&gt;
+        &lt;p&gt;不过我们在插入数据到 &lt;code&gt;TCC.db&lt;/code&gt; 的时候，只需要构造一个满足特定格式的、非常短的 &lt;code&gt;Blob&lt;/code&gt; 即可。这个 &lt;code&gt;Blob&lt;/code&gt; 的格式是由 Apple 的 &lt;code&gt;libsecurity_codesigning&lt;/code&gt; 库定义的，源代码可以在这里找到：&lt;a href="https://github.com/toriningen/apple-security-framework/blob/master/OSX/libsecurity_codesigning/lib/requirement.h"&gt;libsecurity_codesigning/lib/requirement.h&lt;/a&gt;&lt;/p&gt;
+        &lt;p&gt;比较粗略的看了一下，这个头文件定义了一个叫 &lt;code&gt;Requirement&lt;/code&gt; 的类，用于表示苹果的代码签名要求（Code Signing Requirements）。&lt;code&gt;Requirement&lt;/code&gt; 类的成员函数包括用于验证是否合法和满足格式要求的 &lt;code&gt;void validate&lt;/code&gt; 和 &lt;code&gt;bool validates&lt;/code&gt;；还有用于声明格式的 &lt;code&gt;kind&lt;/code&gt; 函数，不过目前唯一支持的表达式的类型是 &lt;code&gt;opExpr&lt;/code&gt;。&lt;/p&gt;
+        &lt;p&gt;不过实际上我们并不需要手动写 &lt;code&gt;csreq&lt;/code&gt; 的生成 &amp;amp; 翻译工具，macOS 本身就自带了一个同名的命令行工具 &lt;code&gt;csreq&lt;/code&gt;。这个工具可以用来生成 &lt;code&gt;Blob&lt;/code&gt;，也可以用来解码符合格式要求的 &lt;code&gt;Blob&lt;/code&gt;。这个工具一个旧版本的源代码在这里：&lt;a href="https://opensource.apple.com/source/security_systemkeychain/security_systemkeychain-55191/src/csreq.cpp.auto.html"&gt;csreq.cpp&lt;/a&gt;。&lt;/p&gt;
+        &lt;p&gt;下面主要来说说怎么用吧。就以 &lt;code&gt;TCC.db&lt;/code&gt; 插入时最常用的一条 &lt;code&gt;Blob&lt;/code&gt; 为例，来看看怎么用 &lt;code&gt;csreq&lt;/code&gt; 来生成和解码这个 &lt;code&gt;Blob&lt;/code&gt;。&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-shell"&gt;&lt;span class="hljs-comment"&gt;# Convert the hex string into a binary blob&lt;/span&gt;
+        &lt;span class="hljs-variable"&gt;$ &lt;/span&gt;BLOB=&lt;span class="hljs-string"&gt;"FADE0C000000003000000001000000060000000200000012636F6D2E6170706C652E5465726D696E616C000000000003"&lt;/span&gt;
+        &lt;span class="hljs-variable"&gt;$ &lt;/span&gt;echo &lt;span class="hljs-string"&gt;"$BLOB"&lt;/span&gt; | xxd -r -p &amp;gt; terminal-csreq.bin
+        
+        &lt;span class="hljs-comment"&gt;# Ask csreq to tell us what it means&lt;/span&gt;
+        &lt;span class="hljs-variable"&gt;$ &lt;/span&gt;csreq -r- -t &amp;lt; terminal-csreq.bin
+        identifier &lt;span class="hljs-string"&gt;"com.apple.Terminal"&lt;/span&gt; &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; anchor apple
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;p&gt;从解码的结果来看，这条 &lt;code&gt;Blob&lt;/code&gt; 代表了一个通过苹果官方签名的 &lt;code&gt;com.apple.Terminal&lt;/code&gt; 对象。&lt;/p&gt;
+        &lt;p&gt;那这条信息 &lt;code&gt;identifier "com.apple.Terminal" and anchor apple&lt;/code&gt; 本身是怎么来的呢？或者说，我们应该怎么写这条原始文本，并确认其符合 &lt;code&gt;Blob&lt;/code&gt; 的解析原文的格式要求呢？其实也很简单，使用另一个命令行工具 &lt;code&gt;codesign&lt;/code&gt; 就可以获得任意已签名对象的 &lt;code&gt;designated&lt;/code&gt; 字段，也就是 &lt;code&gt;Blob&lt;/code&gt; 的合法描述原文：&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-shell"&gt;$ codesign -d -r- /Applications/Utilities/Terminal.app
+        Executable=/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal
+        designated =&amp;gt; identifier &lt;span class="hljs-string"&gt;"com.apple.Terminal"&lt;/span&gt; and &lt;span class="hljs-built_in"&gt;anchor&lt;/span&gt; apple
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;p&gt;这里再举一个类似的例子，也就是游戏开发团队非常常用的 P4V 客户端，这玩意儿的 &lt;code&gt;Blob&lt;/code&gt; 是：&lt;/p&gt;
+        &lt;pre&gt;&lt;code&gt;fade0c000000009c00000001000000060000000600000006000000060000000200000010636f6d2e706572666f7263652e7034760000000f0000000e000000010000000a2a864886f763640602060000000000000000000e000000000000000a2a864886f7636406010d0000000000000000000b000000000000000a7375626a6563742e4f550000000000010000000a5059594653593&lt;span class="hljs-number"&gt;53453370000&lt;/span&gt;
+        &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;我们来依样画葫芦地解码一下：&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-shell"&gt;# Convert the hex string &lt;span class="hljs-keyword"&gt;into&lt;/span&gt; a binary blob
+        BLOB=&lt;span class="hljs-string"&gt;"fade0c000000009c00000001000000060000000600000006000000060000000200000010636f6d2e706572666f7263652e7034760000000f0000000e000000010000000a2a864886f763640602060000000000000000000e000000000000000a2a864886f7636406010d0000000000000000000b000000000000000a7375626a6563742e4f550000000000010000000a505959465359353453370000"&lt;/span&gt;
+        echo &lt;span class="hljs-string"&gt;"$BLOB"&lt;/span&gt; | xxd -r -p &amp;gt; p4v-csreq.bin
+        
+        # Ask csreq to tell us what it means
+        $ csreq -r- -t &amp;lt; p4v-csreq.bin
+        identifier &lt;span class="hljs-string"&gt;"com.perforce.p4v"&lt;/span&gt; &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; anchor apple generic &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; certificate &lt;span class="hljs-number"&gt;1&lt;/span&gt;[field&lt;span class="hljs-meta"&gt;.1&lt;/span&gt;&lt;span class="hljs-meta"&gt;.2&lt;/span&gt;&lt;span class="hljs-meta"&gt;.840&lt;/span&gt;&lt;span class="hljs-meta"&gt;.113635&lt;/span&gt;&lt;span class="hljs-meta"&gt;.100&lt;/span&gt;&lt;span class="hljs-meta"&gt;.6&lt;/span&gt;&lt;span class="hljs-meta"&gt;.2&lt;/span&gt;&lt;span class="hljs-meta"&gt;.6&lt;/span&gt;] /* exists */ &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; certificate leaf[field&lt;span class="hljs-meta"&gt;.1&lt;/span&gt;&lt;span class="hljs-meta"&gt;.2&lt;/span&gt;&lt;span class="hljs-meta"&gt;.840&lt;/span&gt;&lt;span class="hljs-meta"&gt;.113635&lt;/span&gt;&lt;span class="hljs-meta"&gt;.100&lt;/span&gt;&lt;span class="hljs-meta"&gt;.6&lt;/span&gt;&lt;span class="hljs-meta"&gt;.1&lt;/span&gt;&lt;span class="hljs-meta"&gt;.13&lt;/span&gt;] /* exists */ &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; certificate leaf[subject.OU] = PYYFSY54S7
+        
+        # ask codesign what the requirement text from the application itself is
+        $ codesign -d -r- /Applications/p4v.app
+        Executable=/Applications/p4v.app/Contents/MacOS/p4v
+        designated =&amp;gt; identifier &lt;span class="hljs-string"&gt;"com.perforce.p4v"&lt;/span&gt; &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; anchor apple generic &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; certificate &lt;span class="hljs-number"&gt;1&lt;/span&gt;[field&lt;span class="hljs-meta"&gt;.1&lt;/span&gt;&lt;span class="hljs-meta"&gt;.2&lt;/span&gt;&lt;span class="hljs-meta"&gt;.840&lt;/span&gt;&lt;span class="hljs-meta"&gt;.113635&lt;/span&gt;&lt;span class="hljs-meta"&gt;.100&lt;/span&gt;&lt;span class="hljs-meta"&gt;.6&lt;/span&gt;&lt;span class="hljs-meta"&gt;.2&lt;/span&gt;&lt;span class="hljs-meta"&gt;.6&lt;/span&gt;] /* exists */ &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; certificate leaf[field&lt;span class="hljs-meta"&gt;.1&lt;/span&gt;&lt;span class="hljs-meta"&gt;.2&lt;/span&gt;&lt;span class="hljs-meta"&gt;.840&lt;/span&gt;&lt;span class="hljs-meta"&gt;.113635&lt;/span&gt;&lt;span class="hljs-meta"&gt;.100&lt;/span&gt;&lt;span class="hljs-meta"&gt;.6&lt;/span&gt;&lt;span class="hljs-meta"&gt;.1&lt;/span&gt;&lt;span class="hljs-meta"&gt;.13&lt;/span&gt;] /* exists */ &lt;span class="hljs-keyword"&gt;and&lt;/span&gt; certificate leaf[subject.OU] = PYYFSY54S7
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;p&gt;可以看到，就是这样简单的处理，就能获得任意对象合法的 &lt;code&gt;Blob&lt;/code&gt; 描述原文。&lt;/p&gt;
+        &lt;p&gt;那么第二个问题来了，既然可以通过 &lt;code&gt;codesign&lt;/code&gt; 来获得 &lt;code&gt;Blob&lt;/code&gt; 的描述原文，那么我们应该如何获得 &lt;code&gt;Blob&lt;/code&gt; 本身呢？这个问题其实也很简单，只要把 &lt;code&gt;Blob&lt;/code&gt; 的描述原文通过 &lt;code&gt;csreq&lt;/code&gt; 转换成二进制格式即可。&lt;/p&gt;
+        &lt;p&gt;这里我们继续用 &lt;code&gt;p4v.app&lt;/code&gt; 为例：&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-shell"&gt;&lt;span class="hljs-comment"&gt;# Get the requirement string from codesign&lt;/span&gt;
+        &lt;span class="hljs-variable"&gt;$ &lt;/span&gt;REQ_STR=&lt;span class="hljs-variable"&gt;$(&lt;/span&gt;codesign -d -r- &lt;span class="hljs-regexp"&gt;/Applications/p&lt;/span&gt;4v.app/ &lt;span class="hljs-number"&gt;2&lt;/span&gt;&amp;gt;&amp;amp;&lt;span class="hljs-number"&gt;1&lt;/span&gt; | awk -F &lt;span class="hljs-string"&gt;' =&amp;gt; '&lt;/span&gt; &lt;span class="hljs-string"&gt;'/designated/{print $2}'&lt;/span&gt;)
+        
+        &lt;span class="hljs-comment"&gt;# Convert the requirements string into it's binary representation(sadly it seems csreq requires the output to be a file; so we just throw it in /tmp)&lt;/span&gt;
+        &lt;span class="hljs-variable"&gt;$ &lt;/span&gt;echo &lt;span class="hljs-string"&gt;"$REQ_STR"&lt;/span&gt; | csreq -r- -b /tmp/csreq.bin
+        
+        &lt;span class="hljs-comment"&gt;# Convert the binary form to hex, and print it nicely for use in sqlite&lt;/span&gt;
+        &lt;span class="hljs-variable"&gt;$ &lt;/span&gt;REQ_HEX=&lt;span class="hljs-variable"&gt;$(&lt;/span&gt;xxd -p /tmp/csreq.bin  | tr -d &lt;span class="hljs-string"&gt;'\n'&lt;/span&gt;)
+        &lt;span class="hljs-variable"&gt;$ &lt;/span&gt;echo &lt;span class="hljs-string"&gt;"X'$REQ_HEX'"&lt;/span&gt;
+        X&lt;span class="hljs-string"&gt;'fade0c000000009c00000001000000060000000600000006000000060000000200000010636f6d2e706572666f7263652e7034760000000f0000000e000000010000000a2a864886f763640602060000000000000000000e000000000000000a2a864886f7636406010d0000000000000000000b000000000000000a7375626a6563742e4f550000000000010000000a505959465359353453370000'&lt;/span&gt;
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;p&gt;如你所见，刚才的 &lt;code&gt;Blob&lt;/code&gt; 描述原文，就这样简单的获取到了。看到这一步的你，应该已经有能力自由地获得任意目标的 &lt;code&gt;Blob&lt;/code&gt; 描述原文，并将其转换成 &lt;code&gt;Blob&lt;/code&gt; 本身。&lt;/p&gt;
+        &lt;h2 id="-tcc-db-access-"&gt;&lt;strong&gt;动手构造一条 &lt;code&gt;TCC.db&lt;/code&gt; &lt;code&gt;access&lt;/code&gt; 语句&lt;/strong&gt;&lt;/h2&gt;
+        &lt;p&gt;既然万事具备，说再多不如动手构造一条 &lt;code&gt;TCC.db&lt;/code&gt; 的插入语句来得记忆深刻。&lt;/p&gt;
+        &lt;p&gt;这里我们以 &lt;code&gt;kTCCServiceAppleEvents&lt;/code&gt; 服务为例，构造一个允许 &lt;code&gt;/usr/bin/env&lt;/code&gt; 通过 &lt;code&gt;AppleEvents&lt;/code&gt; 服务访问 &lt;code&gt;/System/Library/CoreServices/System Events.app&lt;/code&gt; 的 &lt;code&gt;access&lt;/code&gt; 表的插入语句。&lt;/p&gt;
+        &lt;p&gt;这个插入语句的作用呢，一般来说是用来帮助 &lt;code&gt;osascript&lt;/code&gt; 命令在执行 Apple Script 的时候，强制跳过一些用户 GUI 层的确认对话框，从而达到&lt;strong&gt;静默&lt;/strong&gt;执行 Login Items 的目的。在类似 JAMF Pro 这样的企业级管理软件中，有不少类似的骚操作。&lt;/p&gt;
+        &lt;p&gt;好，我们开始。&lt;/p&gt;
+        &lt;ul&gt;
+        &lt;li&gt;首先是 &lt;code&gt;service&lt;/code&gt; 字段，这个字段的值是 &lt;code&gt;kTCCServiceAppleEvents&lt;/code&gt;，是我们的目标服务，也就是用于跳过一些强制行的用户确认 Prompts 的服务对象。&lt;font color="Orange"&gt;&lt;b&gt;下一节为参考表&lt;/b&gt;&lt;/font&gt;&lt;/li&gt;
+        &lt;li&gt;然后是 &lt;code&gt;client&lt;/code&gt; 字段，这个字段的值是 &lt;code&gt;/usr/bin/env&lt;/code&gt;，这个是我们的目标客户端，也就是我们要让它通过 &lt;code&gt;kTCCServiceAppleEvents&lt;/code&gt; 服务访问 &lt;code&gt;/System/Applications/System Preferences.app&lt;/code&gt; 的客户端。这里无论是 &lt;code&gt;/usr/bin/env&lt;/code&gt; 还是其对应的 &lt;code&gt;identifier&lt;/code&gt;，都是可以的，所以也可以写成 &lt;code&gt;com.apple.env&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;client_type&lt;/code&gt; 字段，如果你 &lt;code&gt;client&lt;/code&gt; 填的是 &lt;code&gt;/usr/bin/env&lt;/code&gt;，也就是绝对路径，那就这个字段的值是 &lt;code&gt;1&lt;/code&gt;；如果填的是 &lt;code&gt;com.apple.env&lt;/code&gt;，也就是 &lt;code&gt;identifier&lt;/code&gt;，那就这个字段的值是 &lt;code&gt;0&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;auth_value&lt;/code&gt; 字段，那肯定是允许嘛。所以这个字段的值是 &lt;code&gt;2&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;auth_reason&lt;/code&gt; 字段，这个字段的值是 &lt;code&gt;3&lt;/code&gt;，也就是 &lt;code&gt;User Set&lt;/code&gt;。表示是用户自己设置的（笑）。&lt;font color="Orange"&gt;&lt;b&gt;下一节为参考表&lt;/b&gt;&lt;/font&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;auth_version&lt;/code&gt; 字段，默认就是 &lt;code&gt;1&lt;/code&gt;。别问，别管。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;csreq&lt;/code&gt; 字段，这个字段就是对 &lt;code&gt;/usr/bin/env&lt;/code&gt; 的 &lt;code&gt;Blob&lt;/code&gt; 描述原文的二进制表示。&lt;font color="Orange"&gt;&lt;b&gt;构造方法上面一节已经说的清清楚楚了。&lt;/b&gt;&lt;/font&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;policy_id&lt;/code&gt; 字段，我们暂时用不到，设置为 &lt;code&gt;NULL&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;indirect_object_identifier_type&lt;/code&gt; 也就是被访问对象的类型，这里是 &lt;code&gt;0&lt;/code&gt;，也就是 &lt;code&gt;identifier&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;indirect_object_identifier&lt;/code&gt; 字段，这个字段的值是 &lt;code&gt;/System/Library/CoreServices/System Events.app/&lt;/code&gt; 的 &lt;code&gt;identifier&lt;/code&gt;，也就是 &lt;code&gt;com.apple.systemevents&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;indirect_object_code_identity&lt;/code&gt; 字段，这个字段的值是 &lt;code&gt;/System/Library/CoreServices/System Events.app/&lt;/code&gt; 的 &lt;code&gt;Blob&lt;/code&gt; 二进制表示。&lt;font color="Orange"&gt;&lt;b&gt;构造方法也是参考上一节。&lt;/b&gt;&lt;/font&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;flags&lt;/code&gt; 字段，我们暂时用不到，设置为 &lt;code&gt;NULL&lt;/code&gt;。&lt;/li&gt;
+        &lt;li&gt;&lt;code&gt;last_modified&lt;/code&gt; 字段，这个字段的值只要是合法的时间戳就行，我自己一般喜欢用 &lt;code&gt;2022-01-01 00:00:00&lt;/code&gt;，也就是 &lt;code&gt;1642634565&lt;/code&gt;。&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;p&gt;那么现在，我们的插入语句已经全部完成了，写出来就是这么个样子：&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-sql"&gt;&lt;span class="hljs-keyword"&gt;INSERT&lt;/span&gt; &lt;span class="hljs-keyword"&gt;INTO&lt;/span&gt; &lt;span class="hljs-keyword"&gt;access&lt;/span&gt; &lt;span class="hljs-keyword"&gt;VALUES&lt;/span&gt;(
+            &lt;span class="hljs-string"&gt;'kTCCServiceAppleEvents'&lt;/span&gt;,   &lt;span class="hljs-comment"&gt;-- service&lt;/span&gt;
+            &lt;span class="hljs-string"&gt;'/usr/bin/env'&lt;/span&gt;,                &lt;span class="hljs-comment"&gt;-- client&lt;/span&gt;
+            &lt;span class="hljs-number"&gt;1&lt;/span&gt;,                          &lt;span class="hljs-comment"&gt;-- client_type&lt;/span&gt;
+            &lt;span class="hljs-number"&gt;2&lt;/span&gt;,                          &lt;span class="hljs-comment"&gt;-- auth_value&lt;/span&gt;
+            &lt;span class="hljs-number"&gt;3&lt;/span&gt;,                          &lt;span class="hljs-comment"&gt;-- auth_reason&lt;/span&gt;
+            &lt;span class="hljs-number"&gt;1&lt;/span&gt;，                         &lt;span class="hljs-comment"&gt;-- auth_version&lt;/span&gt;
+            &lt;span class="hljs-comment"&gt;-- csreq&lt;/span&gt;
+            X&lt;span class="hljs-string"&gt;'fade0c000000002c0000000100000006000000020000000d636f6d2e6170706c652e656e7600000000000003'&lt;/span&gt;,
+            &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,                       &lt;span class="hljs-comment"&gt;-- policy_id&lt;/span&gt;
+            &lt;span class="hljs-number"&gt;0&lt;/span&gt;,                          &lt;span class="hljs-comment"&gt;-- indirect_object_identifier_type&lt;/span&gt;
+            &lt;span class="hljs-string"&gt;'com.apple.systemevents'&lt;/span&gt;,   &lt;span class="hljs-comment"&gt;-- indirect_object_identifier&lt;/span&gt;
+            &lt;span class="hljs-comment"&gt;-- indirect_object_code_identity&lt;/span&gt;
+            X&lt;span class="hljs-string"&gt;'fade0c000000003400000001000000060000000200000016636f6d2e6170706c652e73797374656d6576656e7473000000000003'&lt;/span&gt;,
+            &lt;span class="hljs-literal"&gt;NULL&lt;/span&gt;,                       &lt;span class="hljs-comment"&gt;-- flags&lt;/span&gt;
+            &lt;span class="hljs-number"&gt;1642634565&lt;/span&gt;                  &lt;span class="hljs-comment"&gt;-- last_modified&lt;/span&gt;
+        );
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;p&gt;之后我们就可以用 &lt;code&gt;sqlite3&lt;/code&gt; 命令行工具，或者 &lt;code&gt;DB Browser for SQLite&lt;/code&gt; 这样的 GUI 工具，将这条语句插入到 &lt;code&gt;TCC.db&lt;/code&gt; 中了。&lt;/p&gt;
+        &lt;p&gt;然后，你就可以通过构造一个 &lt;code&gt;plist&lt;/code&gt; 文件和 &lt;code&gt;launchctl&lt;/code&gt; 命令，给用户加载一些 Login Items，例如更换壁纸、更换 Dock 图标、更换桌面图标等等，而不需要经过用户在 GUI 的窗口确认了。&lt;/p&gt;
+        &lt;p&gt;以下为一个简单的 plist 文件示例：&lt;/p&gt;
+        &lt;pre&gt;&lt;code class="lang-xml"&gt;&lt;span class="xml"&gt;&lt;span class="php"&gt;&lt;span class="hljs-meta"&gt;&amp;lt;?&lt;/span&gt;xml version=&lt;span class="hljs-string"&gt;"1.0"&lt;/span&gt; encoding=&lt;span class="hljs-string"&gt;"UTF-8"&lt;/span&gt;&lt;span class="hljs-meta"&gt;?&amp;gt;&lt;/span&gt;&lt;/span&gt;
+        &lt;span class="hljs-meta"&gt;&amp;lt;!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"&amp;gt;&lt;/span&gt;
+        &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;plist&lt;/span&gt; &lt;span class="hljs-attr"&gt;version&lt;/span&gt;=&lt;span class="hljs-string"&gt;"1.0"&lt;/span&gt;&amp;gt;&lt;/span&gt;
+        &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;dict&lt;/span&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;key&lt;/span&gt;&amp;gt;&lt;/span&gt;Label&lt;span class="hljs-tag"&gt;&amp;lt;/&lt;span class="hljs-name"&gt;key&lt;/span&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;string&lt;/span&gt;&amp;gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="hljs-template-variable"&gt;{{ plist_name }}&lt;/span&gt;&lt;span class="xml"&gt;&lt;span class="hljs-tag"&gt;&amp;lt;/&lt;span class="hljs-name"&gt;string&lt;/span&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;key&lt;/span&gt;&amp;gt;&lt;/span&gt;Program&lt;span class="hljs-tag"&gt;&amp;lt;/&lt;span class="hljs-name"&gt;key&lt;/span&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;string&lt;/span&gt;&amp;gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="hljs-template-variable"&gt;{{ apple_script_path }}&lt;/span&gt;&lt;span class="xml"&gt;&lt;span class="hljs-tag"&gt;&amp;lt;/&lt;span class="hljs-name"&gt;string&lt;/span&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;key&lt;/span&gt;&amp;gt;&lt;/span&gt;RunAtLoad&lt;span class="hljs-tag"&gt;&amp;lt;/&lt;span class="hljs-name"&gt;key&lt;/span&gt;&amp;gt;&lt;/span&gt;
+            &lt;span class="hljs-tag"&gt;&amp;lt;&lt;span class="hljs-name"&gt;true&lt;/span&gt;/&amp;gt;&lt;/span&gt;
+        &lt;span class="hljs-tag"&gt;&amp;lt;/&lt;span class="hljs-name"&gt;dict&lt;/span&gt;&amp;gt;&lt;/span&gt;
+        &lt;span class="hljs-tag"&gt;&amp;lt;/&lt;span class="hljs-name"&gt;plist&lt;/span&gt;&amp;gt;&lt;/span&gt;&lt;/span&gt;
+        &lt;/code&gt;&lt;/pre&gt;
+        &lt;p&gt;&lt;font color="Orange"&gt;&lt;b&gt;吐槽&lt;/b&gt;&lt;/font&gt;：明明非常正常的设备和系统管理操作，非要被苹果弄得像是黑客入侵操作一样。真有你的，库克。&lt;/p&gt;
+        &lt;h2 id="-service-auth_reason-sup-2-https-www-rainforestqa-com-blog-macos-tcc-db-deep-dive-sup-"&gt;&lt;strong&gt;&lt;code&gt;Service&lt;/code&gt; &amp;amp; &lt;code&gt;Auth_Reason&lt;/code&gt; 参考表&lt;sup&gt;&lt;a href="https://www.rainforestqa.com/blog/macos-tcc-db-deep-dive"&gt;[2]&lt;/a&gt;&lt;/sup&gt;&lt;/strong&gt;&lt;/h2&gt;
+        &lt;p&gt;&lt;br&gt;&lt;/p&gt;
+        &lt;details style="box-shadow: 2px 2px 5px; border-radius: 6px; padding: .5em .5em .5em;"&gt;
+            &lt;summary&gt;&lt;b&gt;SERVICE List&lt;/b&gt;&lt;/summary&gt;
+            &lt;br&gt;
+            &lt;table border="1"&gt;
+                &lt;tbody&gt;&lt;tr&gt; &lt;th&gt;&lt;b&gt;Value&lt;/b&gt;&lt;/th&gt; &lt;th&gt;&lt;b&gt;Description&lt;/b&gt;&lt;/th&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceAddressBook&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access your contacts.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceAppleEvents&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client wants access to control indirect_object. Allowing control will provide access to documents and       data in indirect_object, and to perform actions within that app.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceBluetoothAlways&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to use Bluetooth.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceCalendar&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access your calendar.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceCamera&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access the camera.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceContactsFull&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access all of your contacts information.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceContactsLimited&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access your contacts basic information.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceFileProviderDomain&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client wants to access files managed by indirect_object.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceFileProviderPresence&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Do you want to allow client to see when you are using files managed by it? It will see which applications are used to access files and whether you are actively using them. It will not see when files that are not managed by it are accessed.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceLocation&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to use your current location.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceMediaLibrary&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access Apple Music, your music and video activity, and your media library.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceMicrophone&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access the microphone.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceMotion&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client Would Like to Access Your Motion &amp;amp; Fitness Activity.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServicePhotos&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client Would Like to Access Your Photos&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServicePhotosAdd&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client Would Like to Add to your Photos&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServicePrototype3Rights&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client Would Like Authorization to Test Service Proto3Right.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServicePrototype4Rights&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client Would Like Authorization to Test Service Proto4Right.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceReminders&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access your reminders.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceScreenCapture&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to capture the contents of the system display.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSiri&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Would You Like to Use client with Siri?&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSpeechRecognition&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client Would Like to Access Speech Recognition.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicyDesktopFolder&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access files in your Desktop folder.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicyDeveloperFiles&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access a file used in Software Development.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicyDocumentsFolder&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access files in your Documents folder.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicyDownloadsFolder&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access files in your Downloads folder.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicyNetworkVolumes&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access files on a network volume.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicyRemovableVolumes&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access files on a removable volume.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicySysAdminFiles&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to administer your computer. Administration can include modifying passwords, networking, and system settings.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceWillow&lt;/b&gt;&lt;/td&gt; &lt;td&gt;client would like to access your Home data.&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSystemPolicyAllFiles&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Full Disk Access&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceAccessibility&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Allows app to control your computer&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServicePostEvent&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Allows to send keystrokes&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceListenEvent&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Input Monitoring; to monitor input from your keyboard&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceDeveloperTool&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Allows app to run software locally that do not meet the system’s security policy&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceLiverpool&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Related to location services&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceUbiquity&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Related to iCloud&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceShareKit&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Related to the share feature(presumably from iOS)(ShareKit)&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceLinkedIn&lt;/b&gt;&lt;/td&gt; &lt;td&gt;LinkedIn&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceTwitter&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Twitter&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceFacebook&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Facebook&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceSinaWeibo&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Sina Weibo&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;kTCCServiceTencentWeibo&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Tencent Weibo&lt;/td&gt; &lt;/tr&gt;
+            &lt;/tbody&gt;&lt;/table&gt;
+        &lt;/details&gt;
+        ‍
+        &lt;br&gt;
+        &lt;details style="box-shadow: 2px 2px 5px; border-radius: 6px; padding: .5em .5em .5em;"&gt;
+            &lt;summary&gt;&lt;b&gt;AUTH_REASON List&lt;/b&gt;&lt;/summary&gt;
+            &lt;br&gt;
+            &lt;table border="1"&gt;
+                &lt;tbody&gt;&lt;tr&gt; &lt;th&gt;&lt;b&gt;Value&lt;/b&gt;&lt;/th&gt; &lt;th&gt;&lt;b&gt;Description&lt;/b&gt;&lt;/th&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;1&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Error&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;2&lt;/b&gt;&lt;/td&gt; &lt;td&gt;User Consent&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;3&lt;/b&gt;&lt;/td&gt; &lt;td&gt;User Set&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;4&lt;/b&gt;&lt;/td&gt; &lt;td&gt;System Set&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;5&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Service Policy&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;6&lt;/b&gt;&lt;/td&gt; &lt;td&gt;MDM Policy&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;7&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Override Policy&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;8&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Missing usage string&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;9&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Prompt Timeout&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;10&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Preflight Unknown&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;11&lt;/b&gt;&lt;/td&gt; &lt;td&gt;Entitled&lt;/td&gt; &lt;/tr&gt;
+                &lt;tr&gt; &lt;td&gt;&lt;b&gt;12&lt;/b&gt;&lt;/td&gt; &lt;td&gt;App Type Policy&lt;/td&gt; &lt;/tr&gt;
+            &lt;/tbody&gt;&lt;/table&gt;
+        &lt;/details&gt;
+        
+        &lt;p&gt;&lt;br&gt;&lt;/p&gt;
+        &lt;h2 id="-"&gt;&lt;strong&gt;相关文献&lt;/strong&gt;&lt;/h2&gt;
+        &lt;ol&gt;
+        &lt;li&gt;&lt;em&gt;&lt;a href="https://www.slideshare.net/CsabaFitzl/20-ways-to-bypass-your-mac-os-privacy-mechanisms"&gt;20+ ways to bypass your mac os privacy mechanisms -- Csaba Fitzl&lt;/a&gt;&lt;/em&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;em&gt;&lt;a href="https://www.rainforestqa.com/blog/macos-tcc-db-deep-dive"&gt;A deep dive into macOS TCC.db -- Keith Johnson&lt;/a&gt;&lt;/em&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;em&gt;&lt;a href="https://stackoverflow.com/questions/52706542/how-to-get-csreq-of-macos-application-on-command-line/57259004#57259004"&gt;How to get csreq of macOS application on command line? -- Keith Johnson&lt;/a&gt;&lt;/em&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;em&gt;&lt;a href="https://objective-see.org/blog/blog_0x4C.html"&gt;CVE-2020–9934&lt;/a&gt;&lt;/em&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;em&gt;&lt;a href="https://nvd.nist.gov/vuln/detail/CVE-2021-1784"&gt;CVE-2021-1784&lt;/a&gt;&lt;/em&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;em&gt;&lt;a href="https://theevilbit.github.io/posts/cve_2021_30920/"&gt;CVE-2021-30920&lt;/a&gt;&lt;/em&gt;&lt;/li&gt;
+        &lt;/ol&gt;
+             
+        &lt;!-- Post Content Ends Here --&gt;
+      &lt;/div&gt;
+      &lt;div class="footer"&gt;
+      &lt;p&gt;&lt;a href="https://creativecommons.org/licenses/by/4.0/" target="_blank"&gt;CC 4.0&lt;/a&gt;
+        &lt;br&gt;
+        © 1995-&lt;script type="text/javascript"&gt;document.write((new Date()).getFullYear());&lt;/script&gt;
+        Kivinsae Fang
+        &lt;br&gt;
+        Powered by Raw HTML
+      &lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  
+
+&lt;/body&gt;</content></entry></feed>
