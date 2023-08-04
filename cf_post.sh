@@ -16,3 +16,4 @@ sed -i "s/LEANCLOUD_APPKEY/$LC_APPKEY/g" node_modules/hexo-theme-landscape/_conf
 ./node_modules/hexo/bin/hexo generate
 
 cp -rf ads.txt ./public/
+cp -rf privacy_policy.html ./public/
