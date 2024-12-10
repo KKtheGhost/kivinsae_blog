@@ -42,8 +42,12 @@ date: 2022-06-02 13:41:23
 - Optimized build pipelines (TeamCity) and automate game deployment.
 - Setup and maintain both Chinese and Global production environment.
 
-#### <b>[Electronic Arts](https://www.ea.com/)/Infrastructure Engineer/Shanghai</b><div align="left">2022.05 - Now</dov>
-- APAC Studios Infra & Automation
+#### <b>[Electronic Arts](https://www.ea.com/)/Infrastructure Engineer/Shanghai</b><div align="left">2022.05 - 2023.12</dov>
+- Protected by NDA
+
+#### <b>[MetLife Japan](https://www.metlife.co.jp/)/Senior SRE Engineer/Tokyo</b><div align="left">2023.12 - Now</dov>
+- Protected by NDA
+
 ---
 ## <b>Find Me</b>
 
