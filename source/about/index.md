@@ -16,4 +16,4 @@ date: 2022-06-02 13:41:23
 
 #### <b>[Electronic Arts](https://www.ea.com/) / Shanghai, CHINA</b><div align="left">2022.05 - 2023.12</dov>
 
-#### <b>[MetLife Japan](https://www.metlife.co.jp/) / Tokyo, JAPAN</b><div align="left">2023.12 - Now</dov>
+#### <b>FinTech Company / Tokyo, JAPAN</b><div align="left">2023.12 - Now</dov>
